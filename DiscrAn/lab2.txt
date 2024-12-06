@@ -1,0 +1,172 @@
+#include <iostream>
+#include <cstring>
+#include <cstdlib>
+#include <cstdint>
+#include <cctype>
+
+constexpr int MAX_WORD_LENGTH = 257;
+
+class Node {
+public:
+    char word[MAX_WORD_LENGTH];
+    uint64_t priority;
+    uint64_t value;
+    Node *left, *right;
+
+    Node(const char *word, uint64_t value, unsigned int *seed) {
+        strncpy(this->word, word, MAX_WORD_LENGTH);
+        this->word[MAX_WORD_LENGTH - 1] = '\0';
+        this->value = value;
+        this->priority = rand_r(seed);
+        this->left = this->right = nullptr;
+    }
+};
+
+class Treap {
+private:
+    Node *root;
+    unsigned int seed;
+
+    void split(Node *current, const char *word, Node *&left, Node *&right) {
+        if (!current) {
+            left = right = nullptr;
+        } else if (strcasecmp(word, current->word) < 0) {
+            split(current->left, word, left, current->left);
+            right = current;
+        } else {
+            split(current->right, word, current->right, right);
+            left = current;
+        }
+    }
+
+    Node* merge(Node *left, Node *right) {
+        if (!left || !right) {
+            return left ? left : right;
+        }
+        if (left->priority > right->priority) {
+            left->right = merge(left->right, right);
+            return left;
+        } else {
+            right->left = merge(left, right->left);
+            return right;
+        }
+    }
+
+    Node* insert(Node *current, Node *new_node) {
+        if (!current) {
+            return new_node;
+        }
+        if (strcasecmp(new_node->word, current->word) == 0) {
+            return current;
+        }
+        if (new_node->priority > current->priority) {
+            split(current, new_node->word, new_node->left, new_node->right);
+            return new_node;
+        } else if (strcasecmp(new_node->word, current->word) < 0) {
+            current->left = insert(current->left, new_node);
+        } else {
+            current->right = insert(current->right, new_node);
+        }
+        return current;
+    }
+
+    Node* erase(Node *current, const char *word) {
+        if (!current) {
+            return nullptr;
+        }
+        if (strcasecmp(word, current->word) == 0) {
+            Node *temp = merge(current->left, current->right);
+            delete current;
+            return temp;
+        }
+        if (strcasecmp(word, current->word) < 0) {
+            current->left = erase(current->left, word);
+        } else {
+            current->right = erase(current->right, word);
+        }
+        return current;
+    }
+
+    Node* find(Node *current, const char *word) {
+        if (!current) {
+            return nullptr;
+        }
+        if (strcasecmp(word, current->word) == 0) {
+            return current;
+        }
+        if (strcasecmp(word, current->word) < 0) {
+            return find(current->left, word);
+        } else {
+            return find(current->right, word);
+        }
+    }
+
+public:
+    Treap() : root(nullptr) {
+        seed = time(nullptr);
+    }
+
+    ~Treap() {
+        while (root) {
+            erase(root->word);
+        }
+    }
+
+    void insert(const char *word, uint64_t value) {
+        if (strlen(word) >= MAX_WORD_LENGTH) {
+            std::cerr << "Word too long" << "\n";
+            return;
+        }
+        Node *new_node = new Node(word, value, &seed);
+        root = insert(root, new_node);
+    }
+
+    void erase(const char *word) {
+        root = erase(root, word);
+    }
+
+    Node* find(const char *word) {
+        return find(root, word);
+    }
+
+    void process_command(const char *command) {
+        char word[MAX_WORD_LENGTH];
+        uint64_t number;
+
+        if (sscanf(command, "+ %257s %lu", word, &number) == 2) {
+            Node *found = find(word);
+            if (found) {
+                std::cout << "Exist" << std::endl;
+            } else {
+                insert(word, number);
+                std::cout << "OK" << std::endl;
+            }
+        } else if (sscanf(command, "- %257s", word) == 1) {
+            Node *found = find(word);
+            if (found) {
+                erase(word);
+                std::cout << "OK" << std::endl;
+            } else {
+                std::cout << "NoSuchWord" << std::endl;
+            }
+        } else if (sscanf(command, "%257s", word) == 1) {
+            Node *found = find(word);
+            if (found) {
+                std::cout << "OK: " << found->value << std::endl;
+            } else {
+                std::cout << "NoSuchWord" << std::endl;
+            }
+        }
+    }
+};
+
+int main() {
+    Treap dictionary;
+    char command[512];
+
+    while (fgets(command, sizeof(command), stdin)) {
+        dictionary.process_command(command);
+    }
+
+    return 0;
+}

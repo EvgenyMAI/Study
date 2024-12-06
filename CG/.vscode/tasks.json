@@ -1,0 +1,60 @@
+// 1. Задача "Build1" компилирует исходный файл (.cpp) в объектный файл (.o).
+// 2. Задача "Build2" использует этот объектный файл для сборки исполнимого файла (.exe).
+// 3. Задача "Run" выполняет полученный исполнимый файл (.exe).
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build1",
+            "type": "shell",
+            "command": "C:/msys64/ucrt64/bin/g++.exe",
+            "args": [
+                "-c",
+                "-o",
+                "\"${fileDirname}\\${fileBasenameNoExtension}.o\"",
+                "\"${file}\"",
+                "-I\"C:/msys64/ucrt64/include\""
+            ],
+            "options": {
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": ["/c"]
+                }
+            }
+        },
+        {
+            "label": "Build2",
+            "type": "shell",
+            "command": "C:/msys64/ucrt64/bin/g++.exe",
+            "args": [
+                "-o",
+                "\"${fileDirname}\\${fileBasenameNoExtension}.exe\"",
+                "\"${fileDirname}\\${fileBasenameNoExtension}.o\"",
+                "-L\"C:/msys64/ucrt64/lib\"",
+                "-lfreeglut",
+                "-lopengl32",
+                "-lglu32",
+                "-Wl,--subsystem,windows"
+            ],
+            "options": {
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": ["/c"]
+                }
+            },
+            "dependsOn": ["Build1"]
+        },
+        {
+            "label": "Run",
+            "type": "shell",
+            "command": "\"${fileDirname}\\${fileBasenameNoExtension}.exe\"",
+            "options": {
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": ["/c"]
+                }
+            },
+            "dependsOn": ["Build2"]
+        }
+    ]
+}
