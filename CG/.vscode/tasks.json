@@ -13,7 +13,9 @@
                 "-o",
                 "\"${fileDirname}\\${fileBasenameNoExtension}.o\"",
                 "\"${file}\"",
-                "-I\"C:/msys64/ucrt64/include\""
+                "-I\"C:/msys64/ucrt64/include\"",
+                "-I\"C:/msys64/ucrt64/include/glm\"",
+                "-I\"C:/msys64/mingw64/include/GLFW\""
             ],
             "options": {
                 "shell": {
@@ -32,8 +34,10 @@
                 "\"${fileDirname}\\${fileBasenameNoExtension}.o\"",
                 "-L\"C:/msys64/ucrt64/lib\"",
                 "-lfreeglut",
+                "-lglew32",
                 "-lopengl32",
                 "-lglu32",
+                "-lglfw3",
                 "-Wl,--subsystem,windows"
             ],
             "options": {
