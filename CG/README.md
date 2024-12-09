@@ -15,7 +15,7 @@ pacman -S mingw-w64-ucrt-x86_64-glew
 ```
 pacman -S mingw-w64-ucrt-x86_64-glm
 ```
-### Установка библиотеки *glfw
+### Установка библиотеки *glfw*
 ```
 pacman -S mingw-w64-ucrt-x86_64-glfw
 ```
