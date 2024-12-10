@@ -4,10 +4,22 @@
 https://code.visualstudio.com/docs/languages/cpp
 ```
 ### Установка библиотек через среду MSYS2 MSYS
-**freeglut**: ```pacman -S mingw-w64-ucrt-x86_64-freeglut```
-**glew**: ```pacman -S mingw-w64-ucrt-x86_64-glew```
-**glm**: ```pacman -S mingw-w64-ucrt-x86_64-glm```
-**glfw**: ```pacman -S mingw-w64-ucrt-x86_64-glfw```
+**freeglut**:
+```
+pacman -S mingw-w64-ucrt-x86_64-freeglut
+```
+**glew**:
+```
+pacman -S mingw-w64-ucrt-x86_64-glew
+```
+**glm**:
+```
+pacman -S mingw-w64-ucrt-x86_64-glm
+```
+**glfw**:
+```
+pacman -S mingw-w64-ucrt-x86_64-glfw
+```
 ### Способ выполнить компиляцию и запуск программы с помощью собственной комбинации клавиш (для Visual Studio Code)
 1. Откройте файл *keybindings.json*:
     - Нажмите *Ctrl+Shift+P*, введите `Preferences: Open Keyboard Shortcuts (JSON)` и выберите этот пункт.
