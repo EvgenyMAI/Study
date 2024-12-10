@@ -3,7 +3,7 @@
 ```
 https://code.visualstudio.com/docs/languages/cpp
 ```
-### Установка библиотек через среду MSYS2 MSYS
+### Установка необходимых библиотек через среду MSYS2 MSYS
 **freeglut**:
 ```
 pacman -S mingw-w64-ucrt-x86_64-freeglut
