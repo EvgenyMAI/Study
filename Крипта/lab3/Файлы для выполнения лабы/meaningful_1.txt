@@ -1,0 +1,31 @@
+So what does it mean to be a professional programmer? What does it mean to be a professional anything? Some definitions simply say to be a professional is "to make money from a skill," but true professionals also have a set of qualities often described as "professionalism." In my opinion, these qualities are: trustworthiness, teamwork, leadership, communication, constant updating of skills, an interest in minimizing risks and accountability. Each of these effect the professional programmer in certain ways.
+
+Trustworthiness The concept of trustworthiness applies in several different ways for programmers. Can you be trusted with a job? To perform a task without someone checking up on you? Can you be trusted to ask for help when you need it?
+
+If you're given clients' data or have signed a non-disclosure agreement, then you are being trusted to respect privacy. You are trusted to check license agreements on third party tools or libraries and to get licenses or permission as required. And like any professional you are trusted to simply do a good job.
+
+Teamwork Will you genuinely cooperate with your team mates? Will you work to mutual advantage and not just your own? Can you trust your team to work with you? Can you do your share of the work and trust your team to do the rest? And can you accept your management (and sometimes even clients) as part of the team, everyone trying to get the same job done?
+
+Leadership Showing leadership means both earning respect from others and knowing what to do with it. Recognize the skills of your team members, and make sure you can offer each person challenges and development without exceeding what they can cope with at a given time.
+
+Leadership involves not always getting to do the "fun" parts of a project yourself (that scary "delegation" word). It also involves not asking anyone to do a task that you wouldn't be willing to do yourself. It's not just the managers and lead programmers who need to show leadership, it's any professional programmer. The best programmers to work with are the ones that know what's going on, not just their little tasks.
+
+Communication Respecting the people you work with, and your clients, enough to really listen to them is a critical part of communication. Teamwork can't happen without good communication, nor can accountability.
+
+Communication is critical for helping clients to produce usable specifications and feedback. Will you question whether the specs you are given really will serve the purpose that the client has in mind?
+
+Communication skills help with making meetings timely and effective. A professional's communication is effective and to the point, whether in person, in email, on the phone or in written documents.
+
+Documentation at first seems like a programmer-specific concern until you consider how many people require documentation in a serious project: other programmers need high level, API level and in-code documentation; managers need planning, progress, and bug documentation; lawyers need proof of what was done and when; and users need documentation on how to use the software.
+
+Updating Skills Keeping your skills up to date involves staying aware of what's going on in your industry. What are the current ideas about methodologies like eXtreme Programming? What libraries and tools are out there that might support your project? What are the current refactoring tools? How about standards, file formats and protocols? Are you up to date with Unicode, XML, SQL, and all the other acronyms? Perhaps you're missing out on something if you're not. What platforms are your potential clients using? Should you be learning about cross platform development?
+
+Basically you need to possess a genuine interest in your field, and to read broadly so you know what's out there and which areas to then read deeply about. You also need to accept that even (or should I say "especially") the very best programmers are still learning.
+
+Minimizing Risks Familiarity with best practices, combined with a healthy dose of common sense, will take you a long way towards managing risks. Professional programmers keep track of known bugs or any other change they intend to make. Bugs are risks, and a simple database can prevent you having a product ship with bugs you'd simply forgotten.
+
+Another risk that's often not properly considered is any and all changes to the source code. Source is your livelihood and any change can be a mistake. There's good software out there that will keep track of every revision of your source code and even help merge code that multiple people have changed.
+
+Professional programmers are careful to do enough testing. A software company will generally have testers but the developers need to know how to get the most out of testers and also how to write their own unit and regression tests to make sure every change in behavior is noticed and checked by a human.
+
+Keeping your code simple and well styled is another commonly overlooked way to manage risks and.
