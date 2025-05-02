@@ -1,0 +1,17 @@
+version: '4.41.1'
+
+services:
+  db:
+    image: banhmysuawx/postgres-pgbigm:14-alpine
+    container_name: db_lab1
+    restart: on-failure:5
+    env_file:
+      - environment/psql_db.env
+    ports:
+      - "28879:5432"
+    volumes:
+      - lab1_pgdata:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d  # SQL скрипты для инициализации
+
+volumes:
+  lab1_pgdata:
