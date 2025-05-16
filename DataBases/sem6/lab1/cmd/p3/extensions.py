@@ -1,35 +1,36 @@
+import os
+import sys
 import logging
 from contextlib import suppress
-from internal.db.store import Store
 from contextlib import contextmanager
 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
+from internal.db.store import Store
 
 @contextmanager
 def timeout_context(seconds):
-    yield  # Заглушка — можно использовать `asyncio.Timeout` или `signal` в реальной реализации
+    yield
 
 def main():
     logging.basicConfig(level=logging.INFO)
     store = Store()
     try:
         print("\n=== Fuzzy Search Manufacturers ===")
-        with timeout_context(5):
-            ms = store.fuzzy_search_manufacturers("maliz", method="trgm", threshold=0.2, limit=10)
+        with timeout_context(10):
+            ms = store.fuzzy_search_manufacturers("deb", thresh=0.2, limit=20)
             for m in ms:
-                print(f"ID={m.id} Name={m.name}")
+                print(f"ID={m['manufacturer_id']} Name={m['name']}")
 
         print("\n=== Fuzzy Search Products ===")
-        with timeout_context(5):
-            ps = store.fuzzy_search_products("smartphone", method="bigm", threshold=0.3, limit=5)
+        with timeout_context(10):
+            ps = store.fuzzy_search_products("diskwasher", thresh=0.3, limit=20)
             for p in ps:
-                print(f"ID={p.id} Category={p.category} Price={p.price:.2f}")
+                print(f"ID={p['product_id']} Category={p['category']} Price={p['price']:.2f}")
 
-        with timeout_context(500):
-            store.encrypt_random_users("my-secret-key", count=10000)
+        with timeout_context(1000):
+            store.encrypt_random_users("my-secret-key", total=20000)
 
-        with suppress(Exception):
-            email = store.get_decrypted_email_by_id(581234831, "my-secret-key")
-            print(f"Email пользователя 581234831: {email}")
     finally:
         store.close()
 

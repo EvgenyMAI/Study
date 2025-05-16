@@ -81,7 +81,7 @@ class Extensions:
             self.conn.commit()
 
     def encrypt_random_users(self, key, total=100000):
-        batch_size = 10_000
+        batch_size = 5_000
         logging.info("Создание таблицы encrypted_users (если не существует)...")
         with self.conn.cursor() as cur:
             cur.execute("""

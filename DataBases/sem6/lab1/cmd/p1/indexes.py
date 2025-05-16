@@ -11,18 +11,22 @@ def main():
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", default="benchmark-index", help="режим: create-noindexes, drop-indexes, benchmark-index, benchmark-noindex")
+    parser.add_argument("--mode", default="Benchmark-Index", help="режимы: Create-Noindexes, Drop-Indexes, Benchmark-Index, Benchmark-Noindex")
     args = parser.parse_args()
 
     store = Store()
     try:
-        if args.mode == "create-indexes":
+        if args.mode == "Create-Indexes":
+            print("=== Create-Indexes ===")
             store.create_indexes()
-        elif args.mode == "drop-indexes":
+        elif args.mode == "Drop-Indexes":
+            print("=== Drop-Indexes ===")
             store.drop_indexes()
-        elif args.mode == "benchmark-index":
+        elif args.mode == "Benchmark-Index":
+            print("=== Benchmark-Index ===")
             store.benchmark("с индексами", use_index=True)
-        elif args.mode == "benchmark-noindex":
+        elif args.mode == "Benchmark-Noindex":
+            print("=== Benchmark-Noindex ===")
             store.benchmark("без индексов", use_index=False)
         else:
             raise ValueError(f"Неизвестный режим: {args.mode}")
