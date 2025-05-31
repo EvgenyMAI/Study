@@ -1,6 +1,10 @@
 import pandas as pd
 import streamlit as st
+from business.auth import Authorize
 from repositories.profile import delete_user_account
+from business.notifications import NotificationService
+
+auth = Authorize()
 
 def show_profile_page(user_data):
     """Отображение профиля пользователя."""
@@ -24,6 +28,42 @@ def show_profile_page(user_data):
     else:
         st.error("Ошибка: некорректный формат данных пользователя.")
         return
+    
+    st.markdown("<h3>Уведомления</h3>", unsafe_allow_html=True)
+
+    notifications = NotificationService()
+    
+    # Получаем все уведомления
+    all_notifications = notifications.get_all_notifications(st.session_state["user"]["user_id"])
+    
+    if all_notifications:
+        st.write("Ваши уведомления:")
+        
+        # Разделяем на прочитанные и непрочитанные
+        unread = [n for n in all_notifications if not n.get("read")]
+        read = [n for n in all_notifications if n.get("read")]
+        
+        if unread:
+            st.subheader("Новые")
+            for note in unread:
+                col1, col2 = st.columns([4, 1])
+                with col1:
+                    st.info(f"{note['timestamp']}: {note['message']}")
+                with col2:
+                    if st.button("✓", key=f"read_{note['timestamp']}"):
+                        notifications.mark_as_read(st.session_state["user"]["user_id"], note['timestamp'])
+                        st.rerun()
+        
+        if read:
+            st.subheader("Прочитанные")
+            for note in read:
+                st.text(f"{note['timestamp']}: {note['message']}")
+        
+        if unread and st.button("Пометить все как прочитанные"):
+            notifications.mark_all_as_read(st.session_state["user"]["user_id"])
+            st.rerun()
+    else:
+        st.write("У вас пока нет уведомлений")
 
     # Отображение личной информации
     st.markdown("<h2>Личная информация</h2>", unsafe_allow_html=True)
@@ -45,6 +85,8 @@ def show_profile_page(user_data):
 
     # Кнопка для выхода из аккаунта
     if st.button("Выйти из аккаунта"):
+        if "token" in st.session_state:
+            auth.logout(st.session_state["token"])
         logout_user()
 
     # Раздел: Удаление аккаунта

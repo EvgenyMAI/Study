@@ -30,8 +30,13 @@ def login():
 
             # Проверка пароля
             if auth.auth(email, password):
+                # Генерация токена
+                token = auth.generate_token(email)
+                
                 st.session_state["authenticated"] = True
                 st.session_state["username"] = email
+                st.session_state["token"] = token
+                
                 user_data = user_data.iloc[0]  # Получаем данные пользователя
                 st.session_state["user"] = user_data.to_dict()
                 st.session_state["admin"] = repositories.admin.get_admins(int(user_data["user_id"]))
@@ -68,8 +73,13 @@ def register():
                     "role": ["user"]
                 })
                 user_id = registr.registr(user_data)
+                
+                # Генерация токена для нового пользователя
+                token = auth.generate_token(email)
+                
                 st.success("Успешная регистрация!")
                 st.session_state["authenticated"] = True
+                st.session_state["token"] = token
                 st.session_state["user"] = {
                     "user_id": user_id,
                     "first_name": first_name,
@@ -82,6 +92,14 @@ def register():
                 st.error(f"Ошибка регистрации: {str(e)}")
 
 def main():
+    # Проверка токена при загрузке страницы
+    if "token" in st.session_state and auth.validate_token(st.session_state["token"]):
+        st.session_state["authenticated"] = True
+    else:
+        if "token" in st.session_state:
+            del st.session_state["token"]
+        st.session_state["authenticated"] = False
+
     if not st.session_state["authenticated"]:
         pg = st.radio("Войдите или зарегистрируйтесь", ["Вход", "Регистрация"])
         if pg == "Вход":

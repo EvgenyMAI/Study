@@ -1,7 +1,10 @@
 import psycopg2
-import psycopg2.extras
 from settings import DB_CONFIG
 import pandas as pd
+import json
+from datetime import timedelta
+from repositories.redis_client import redis_client
+from business.notifications import NotificationService
 
 def cleanup_unused_entries():
     """
@@ -23,8 +26,20 @@ def cleanup_unused_entries():
             """
             cur.execute(query_delete_orphan_keywords)
         conn.commit()
+        
+    # Инвалидируем кэш статей
+    invalidate_articles_cache()
 
-import psycopg2
+def invalidate_articles_cache():
+    """
+    Удаляет кэш статей из Redis
+    """
+    redis = redis_client.get_connection()
+    # Удаляем все ключи, связанные со статьями
+    keys = redis.keys("article:*")
+    if keys:
+        redis.delete(*keys)
+    redis.delete("articles:all")
 
 def add_article(article_data):
     """
@@ -111,15 +126,37 @@ def add_article(article_data):
                     """
                     cur.execute(query_link_keyword, (article_id, keyword_id))
 
+            # Отправляем уведомление
+            notifications = NotificationService()
+            notifications.send_notification(
+                article_data['uploaded_by'],
+                f"Статья '{article_data['title']}' успешно добавлена",
+                "article"
+            )
+
+            # Инвалидируем кэш
+            invalidate_articles_cache()
+
             return article_id
 
 def get_articles():
+    """
+    Получает список всех статей с кэшированием в Redis
+    """
+    redis = redis_client.get_connection()
+    cache_key = "articles:all"
+    
+    # Пытаемся получить из кэша
+    cached_articles = redis.get(cache_key)
+    if cached_articles:
+        return pd.read_json(cached_articles)
+    
     query = """
         SELECT a.article_id, a.title, 
                array_agg(DISTINCT CONCAT(au.first_name, ' ', au.last_name)) AS authors, 
                a.publication_year, a.link,
                CONCAT(u.first_name, ' ', u.last_name) AS user_name,
-               array_agg(DISTINCT k.keyword) AS keywords  -- Добавляем агрегацию для ключевых слов
+               array_agg(DISTINCT k.keyword) AS keywords
         FROM articles a
         LEFT JOIN article_authors aa ON a.article_id = aa.article_id
         LEFT JOIN authors au ON aa.author_id = au.author_id
@@ -129,13 +166,58 @@ def get_articles():
         GROUP BY a.article_id, u.first_name, u.last_name
         ORDER BY a.publication_year DESC;
     """
+    
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
             cur.execute(query)
-            # Преобразуем результат в DataFrame
             articles = cur.fetchall()
             columns = ['article_id', 'title', 'authors', 'publication_year', 'link', 'user_name', 'keywords']
-            return pd.DataFrame(articles, columns=columns)
+            df = pd.DataFrame(articles, columns=columns)
+            
+            # Сохраняем в кэш на 1 час
+            redis.setex(cache_key, timedelta(hours=1), df.to_json())
+            return df
+        
+def get_article_by_id(article_id):
+    """
+    Получает статью по ID с кэшированием в Redis
+    """
+    redis = redis_client.get_connection()
+    cache_key = f"article:{article_id}"
+    
+    # Пытаемся получить из кэша
+    cached_article = redis.get(cache_key)
+    if cached_article:
+        return json.loads(cached_article)
+    
+    query = """
+        SELECT a.article_id, a.title, 
+               array_agg(DISTINCT CONCAT(au.first_name, ' ', au.last_name)) AS authors, 
+               a.publication_year, a.link,
+               CONCAT(u.first_name, ' ', u.last_name) AS user_name,
+               array_agg(DISTINCT k.keyword) AS keywords
+        FROM articles a
+        LEFT JOIN article_authors aa ON a.article_id = aa.article_id
+        LEFT JOIN authors au ON aa.author_id = au.author_id
+        LEFT JOIN users u ON a.uploaded_by = u.user_id
+        LEFT JOIN article_keywords ak ON a.article_id = ak.article_id
+        LEFT JOIN keywords k ON ak.keyword_id = k.keyword_id
+        WHERE a.article_id = %s
+        GROUP BY a.article_id, u.first_name, u.last_name;
+    """
+    
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute(query, (article_id,))
+            article = cur.fetchone()
+            if article:
+                columns = ['article_id', 'title', 'authors', 'publication_year', 'link', 'user_name', 'keywords']
+                article_dict = dict(zip(columns, article))
+                
+                # Сохраняем в кэш на 1 час
+                redis.setex(cache_key, timedelta(hours=1), json.dumps(article_dict))
+                return article_dict
+            return None
 
 def update_article(article_data):
     """
@@ -225,6 +307,19 @@ def update_article(article_data):
                 # Очищаем неиспользуемые записи
                 cleanup_unused_entries()
 
+                # Отправляем уведомление
+                notifications = NotificationService()
+                notifications.send_notification(
+                    article_data.get('uploaded_by', 'system'),
+                    f"Статья '{article_data['title']}' успешно обновлена",
+                    "article"
+                )
+
+                # Инвалидируем кэш
+                invalidate_articles_cache()
+                redis = redis_client.get_connection()
+                redis.delete(f"article:{article_data['article_id']}")
+
             except Exception as e:
                 conn.rollback()
                 raise RuntimeError(f"Ошибка при обновлении статьи: {str(e)}")
@@ -236,6 +331,8 @@ def delete_article(article_id):
     :param article_id: ID статьи.
     """
     with psycopg2.connect(**DB_CONFIG) as conn:
+        article = get_article_by_id(article_id)
+
         with conn.cursor() as cur:
             # Удаляем связи статьи с авторами и ключевыми словами
             query_delete_authors = "DELETE FROM article_authors WHERE article_id = %s;"
@@ -247,6 +344,20 @@ def delete_article(article_id):
             # Удаляем саму статью
             query_delete_article = "DELETE FROM articles WHERE article_id = %s;"
             cur.execute(query_delete_article, (article_id,))
+
+            if article:
+                # Отправляем уведомление
+                notifications = NotificationService()
+                notifications.send_notification(
+                    article.get('uploaded_by', 'system'),
+                    f"Статья '{article['title']}' была удалена",
+                    "article"
+                )
+            
+            # Инвалидируем кэш
+            invalidate_articles_cache()
+            redis = redis_client.get_connection()
+            redis.delete(f"article:{article_id}")
 
         conn.commit()
 
