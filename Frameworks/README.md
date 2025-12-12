@@ -25,12 +25,12 @@
 
 ### 1) Классификация: *Diabetes Prediction Dataset*
 - Короткое описание: бинарная классификация - определение наличия диабета по медицинским показателям (возраст, пол, индекс массы тела, глюкоза, HbA1c и т.д.);
-- Источник: [Kaggle — Diabetes Prediction Dataset](https://www.kaggle.com/datasets/priyamchoksi/100000-diabetes-clinical-dataset)
+- Источник: [Kaggle - Diabetes Prediction Dataset](https://www.kaggle.com/datasets/priyamchoksi/100000-diabetes-clinical-dataset)
 - Используемые файлы: `data/diabetes_dataset.csv` (100000 строк, 16 параметров).
 
 ### 2) Регрессия: *House Price Prediction*
 - Короткое описание: предсказание цены недвижимости на основе характеристик объявления и объекта;
-- Источник: [Kaggle — House Price Prediction Challenge](https://www.kaggle.com/datasets/anmolkumar/house-price-prediction-challenge)
+- Источник: [Kaggle - House Price Prediction Challenge](https://www.kaggle.com/datasets/anmolkumar/house-price-prediction-challenge)
 - Используемые файлы: `data/House_Price_Prediction.csv` (29451 строк, 12 столбцов).
 
 ---
@@ -49,13 +49,13 @@
 - Повтор пунктов 2-4 из ЛР1, но с использованием LogisticRegression (для классификации) и LinearRegression (для регрессии).
 
 ### ЛР3 - Дерево решений (`notebooks/lab3.ipynb`)
-- Повтор пунктов 2–4 из ЛР1 с DecisionTreeClassifier и DecisionTreeRegressor.
+- Повтор пунктов 2-4 из ЛР1 с DecisionTreeClassifier и DecisionTreeRegressor.
 
 ### ЛР4 (`notebooks/lab4.ipynb`)
-- Повтор пунктов 2–4 из ЛР1 с RandomForestClassifier/Regressor.
+- Повтор пунктов 2-4 из ЛР1 с RandomForestClassifier/Regressor.
 
 ### ЛР5 (`notebooks/lab5.ipynb`)
-- Повтор пунктов 2–4 из ЛР1 с GradientBoosting;
+- Повтор пунктов 2-4 из ЛР1 с GradientBoosting;
 - Итоговое сравнение всех алгоритмов (KNN, Logistic/Linear, Decision Tree, Random Forest, Gradient Boosting).
 
 ---
