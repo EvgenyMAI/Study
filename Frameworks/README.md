@@ -49,13 +49,13 @@
 - Повтор пунктов 2-4 из ЛР1, но с использованием LogisticRegression (для классификации) и LinearRegression (для регрессии).
 
 ### ЛР3 (`notebooks/lab3.ipynb`)
-- Повтор пунктов 2–4 из ЛР1 с DecisionTreeClassifier и DecisionTreeRegressor.
+- Повтор пунктов 2-4 из ЛР1 с DecisionTreeClassifier и DecisionTreeRegressor.
 
 ### ЛР4 (`notebooks/lab4.ipynb`)
-- Повтор пунктов 2–4 из ЛР1 с RandomForestClassifier/Regressor.
+- Повтор пунктов 2-4 из ЛР1 с RandomForestClassifier/Regressor.
 
 ### ЛР5 (`notebooks/lab5.ipynb`)
-- Повтор пунктов 2–4 из ЛР1 с GradientBoosting;
+- Повтор пунктов 2-4 из ЛР1 с GradientBoosting;
 - Итоговое сравнение всех алгоритмов (KNN, Logistic/Linear, Decision Tree, Random Forest, Gradient Boosting).
 
 ---
