@@ -1,22 +1,22 @@
-<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 YaBrowser/25.10.0.0 Safari/537.36" version="29.2.3">
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 YaBrowser/25.10.0.0 Safari/537.36" version="29.2.7">
   <diagram name="Страница — 1" id="VnlM2RZqCB-iVcS4Vifw">
-    <mxGraphModel dx="2253" dy="784" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1544" dy="782" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="CRXUMtN9nyb4dI1Op8ES-1" parent="1" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=light-dark(#000000,#FFFFFF);" value="&lt;font face=&quot;Helvetica&quot; style=&quot;font-size: 11px;&quot;&gt;УПРАВЛЕНИЕ ДЕЯТЕЛЬНОСТЬЮ АВТОСАЛОНА&lt;/font&gt;" vertex="1">
           <mxGeometry height="40" width="196" x="354" y="120" as="geometry" />
         </mxCell>
-        <mxCell id="CRXUMtN9nyb4dI1Op8ES-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;font&gt;Учёт автомобилей&lt;/font&gt;" vertex="1">
-          <mxGeometry height="30" width="120" x="70" y="210" as="geometry" />
+        <mxCell id="CRXUMtN9nyb4dI1Op8ES-2" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;font&gt;Управление автомобилями&lt;/font&gt;" vertex="1">
+          <mxGeometry height="30" width="160" x="50" y="210" as="geometry" />
         </mxCell>
         <mxCell id="CRXUMtN9nyb4dI1Op8ES-3" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;font&gt;Управление клиентами&lt;/font&gt;" vertex="1">
           <mxGeometry height="30" width="140" x="274" y="210" as="geometry" />
         </mxCell>
-        <mxCell id="CRXUMtN9nyb4dI1Op8ES-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;font&gt;Оформление продаж&lt;/font&gt;" vertex="1">
+        <mxCell id="CRXUMtN9nyb4dI1Op8ES-4" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;font&gt;Оформление продажи автомобиля&lt;/font&gt;" vertex="1">
           <mxGeometry height="30" width="130" x="510" y="210" as="geometry" />
         </mxCell>
-        <mxCell id="CRXUMtN9nyb4dI1Op8ES-5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;font&gt;Доп. оборудование и работы&lt;/font&gt;" vertex="1">
+        <mxCell id="CRXUMtN9nyb4dI1Op8ES-5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;" value="&lt;font&gt;Управление доп.услугами&lt;/font&gt;" vertex="1">
           <mxGeometry height="30" width="190" x="710" y="210" as="geometry" />
         </mxCell>
         <mxCell id="CRXUMtN9nyb4dI1Op8ES-6" edge="1" parent="1" source="CRXUMtN9nyb4dI1Op8ES-1" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="CRXUMtN9nyb4dI1Op8ES-2" value="">
