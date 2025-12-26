@@ -1,0 +1,45 @@
+# Конфигурация поискового робота
+
+db:
+  # Настройки MongoDB
+  host: localhost
+  port: 27017
+  database: search_engine
+  collection: documents
+  
+logic:
+  # Задержка между обкачкой страниц (в секундах)
+  delay_between_requests: 0.3
+  
+  # Максимальное количество документов для обкачки за один запуск
+  max_documents_per_run: 3000
+  
+  # Таймаут запроса (в секундах)
+  request_timeout: 10
+  
+  # Количество повторных попыток при ошибке
+  retry_attempts: 3
+  
+  # Период переобкачки документов (в днях)
+  recrawl_period_days: 30
+
+sources:
+  # Источники для обкачки
+  - name: habr
+    base_url: https://habr.com
+    start_urls:
+      - https://habr.com/ru/articles/
+      - https://habr.com/ru/news/
+    
+  - name: lenta
+    base_url: https://lenta.ru
+    start_urls:
+      - https://lenta.ru/news/
+      - https://lenta.ru/articles/
+
+logging:
+  # Уровень логирования: DEBUG, INFO, WARNING, ERROR
+  level: INFO
+  
+  # Путь к файлу логов
+  file: ../logs/crawler.log

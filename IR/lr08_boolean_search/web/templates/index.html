@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Булев поиск - МАИ ЛР8</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Булев поиск</h1>
+            <p class="subtitle">Лабораторная работа №8 - Кострюков Е.С.</p>
+        </header>
+
+        <main>
+            <form action="/search" method="GET" class="search-form" onsubmit="showLoading()">
+                <input 
+                    type="text" 
+                    name="q" 
+                    placeholder="Введите запрос (например: python AND программирование)" 
+                    autofocus
+                    class="search-input"
+                    id="search-input"
+                />
+                <button type="submit" class="search-button" id="search-button">Поиск</button>
+            </form>
+
+            <div id="loading" class="loading" style="display: none;">
+                <p>Загрузка индекса и поиск...</p>
+            </div>
+
+            <script>
+                function showLoading() {
+                    document.getElementById('loading').style.display = 'block';
+                    document.getElementById('search-button').disabled = true;
+                    document.getElementById('search-button').textContent = 'Поиск...';
+                }
+            </script>
+
+            {% if error %}
+            <div class="error">{{ error }}</div>
+            {% endif %}
+
+            <div class="help">
+                <h3>Поддерживаемые операторы:</h3>
+                <ul>
+                    <li><strong>AND</strong> - пересечение (оба термина): <code>python AND программирование</code></li>
+                    <li><strong>OR</strong> - объединение (любой термин): <code>python OR java</code></li>
+                    <li><strong>NOT</strong> - исключение: <code>python AND NOT javascript</code></li>
+                    <li><strong>Неявный AND</strong> - два термина подряд: <code>машинное обучение</code></li>
+                </ul>
+
+                <h3>Примеры запросов:</h3>
+                <ul>
+                    <li><code>python</code></li>
+                    <li><code>python AND программирование</code></li>
+                    <li><code>машинное AND обучение</code></li>
+                    <li><code>веб OR мобильный</code></li>
+                    <li><code>python AND NOT javascript</code></li>
+                    <li><code>веб разработка OR программирование</code></li>
+                </ul>
+            </div>
+        </main>
+
+        <footer>
+            <p>МАИ, М8О-407Б-22, 2025</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Результаты поиска: {{ query }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Булев поиск</h1>
+            <p class="subtitle">Лабораторная работа №8 - Кострюков Е.С.</p>
+        </header>
+
+        <main>
+            <form action="/search" method="GET" class="search-form">
+                <input 
+                    type="text" 
+                    name="q" 
+                    value="{{ query }}"
+                    class="search-input"
+                />
+                <button type="submit" class="search-button">Поиск</button>
+            </form>
+
+            <div class="results-stats">
+                Найдено документов: <strong>{{ total }}</strong>
+                {% if total > 50 %}
+                (показано первых 50)
+                {% endif %}
+            </div>
+
+            {% if results %}
+            <div class="results-list">
+                {% for result in results %}
+                <div class="result-item">
+                    <div class="result-id">Документ ID: {{ result.doc_id }}</div>
+                    <div class="result-title">{{ result.title }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="no-results">
+                <p>Ничего не найдено по запросу: <strong>{{ query }}</strong></p>
+                <p>Попробуйте:</p>
+                <ul>
+                    <li>Упростить запрос</li>
+                    <li>Использовать OR вместо AND</li>
+                    <li>Проверить написание терминов</li>
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="back-link">
+                <a href="/">← Новый поиск</a>
+            </div>
+        </main>
+
+        <footer>
+            <p>МАИ, М8О-407Б-22, 2025</p>
+        </footer>
+    </div>
+</body>
+</html>

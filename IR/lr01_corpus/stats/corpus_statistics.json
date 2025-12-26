@@ -1,0 +1,33 @@
+{
+  "total_documents": 39048,
+  "total_raw_size": 5583290193,
+  "total_text_size": 351285029,
+  "sources": {
+    "habr": {
+      "documents": 19982,
+      "total_raw_size_bytes": 4546401302,
+      "total_raw_size_mb": 4335.79,
+      "total_text_size_bytes": 300017779,
+      "total_text_size_mb": 286.12,
+      "avg_raw_size_bytes": 227524.84,
+      "avg_raw_size_kb": 222.19,
+      "avg_text_size_bytes": 15014.4,
+      "avg_text_size_kb": 14.66
+    },
+    "lenta": {
+      "documents": 19066,
+      "total_raw_size_bytes": 1036888891,
+      "total_raw_size_mb": 988.85,
+      "total_text_size_bytes": 51267250,
+      "total_text_size_mb": 48.89,
+      "avg_raw_size_bytes": 54384.19,
+      "avg_raw_size_kb": 53.11,
+      "avg_text_size_bytes": 2688.94,
+      "avg_text_size_kb": 2.63
+    }
+  },
+  "total_raw_size_mb": 5324.64,
+  "total_text_size_mb": 335.01,
+  "avg_raw_size_kb": 139.63,
+  "avg_text_size_kb": 8.79
+}
