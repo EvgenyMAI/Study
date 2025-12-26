@@ -1,2 +1,8 @@
-# Ссылка на корпус
-**[Скачать корпус данных с Google Drive (1.4 ГБ, zip-архив)](https://drive.google.com/file/d/1ELYTGEdc0JcjnWlG71hd5vZaRbUp2zTB/view?usp=drive_link)**
+# Информационный поиск
+
+Репозиторий содержит выполненные лабораторные работы на оценку 3 по курсу «Информационный поиск».
+
+## Выполнил: Кострюков Евгений Сергеевич, студент группы М8О-407Б-22
+
+## Ссылка на корпус текстов
+**[Скачать корпус с Google Drive (1.4 ГБ, zip-архив)](https://drive.google.com/file/d/1ELYTGEdc0JcjnWlG71hd5vZaRbUp2zTB/view?usp=drive_link)**
