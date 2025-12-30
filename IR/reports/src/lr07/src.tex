@@ -1,0 +1,370 @@
+\setcounter{section}{0}
+\setcounter{subsection}{0}
+
+\section{Описание}
+
+\textbf{Цель работы:} Реализовать эффективный булев индекс для полнотекстового поиска с поддержкой логических операций AND, OR и NOT над большим корпусом документов.
+
+\subsection{Алгоритм и структуры данных}
+
+В ходе работы был реализован булев индекс на языке \textbf{C++} без использования готовых контейнеров STL (\texttt{std::map}, \texttt{std::unordered\_map}), что позволило полностью контролировать производительность и понять внутреннее устройство поисковых систем.
+
+\textbf{Выбранные структуры данных:}
+\begin{itemize}
+	\item \textbf{Хеш-таблица:} основная структура индекса представляет собой хеш-таблицу размером \textbf{200\,000 ячеек} с разрешением коллизий методом цепочек. Хеш-функция — djb2 algorithm, обеспечивающая хорошее распределение терминов.
+	\item \textbf{Posting List (список постингов):} для каждого термина хранится список документов, в которых он встречается. Изначально была реализация на связных списках, но для оптимизации производительности была заменена на \textbf{динамический массив}.
+	\item \textbf{Динамический массив:} использует \texttt{realloc} для расширения при заполнении. Capacity удваивается при переполнении, что обеспечивает амортизированную сложность \textbf{O(1)} для вставки.
+\end{itemize}
+
+\textbf{Архитектурные решения:}
+\begin{itemize}
+	\item \textbf{Отложенная сортировка:} ключевая оптимизация — вставка документов в posting list происходит без проверок и сортировки (O(1)). Сортировка и удаление дубликатов выполняются один раз после завершения индексации через метод \texttt{finalize()}.
+	\item \textbf{Быстрое копирование:} для операций над posting lists реализован метод \texttt{copy()}, использующий \texttt{memcpy} для копирования массива за один вызов вместо поэлементного копирования. Это дало ускорение в \textbf{$\sim$500 раз}.
+	\item \textbf{Нормализация терминов:}
+	\begin{itemize}
+		\item Все термины приводятся к нижнему регистру (латиница и кириллица).
+		\item Токенизация по пробелам и знакам препинания.
+		\item Минимальная длина термина: \textbf{3 символа}.
+	\end{itemize}
+\end{itemize}
+
+\textbf{Логические операции:}
+\begin{itemize}
+	\item \textbf{AND (пересечение):} синхронный обход двух отсортированных массивов с выбором общих \texttt{doc\_id}. Сложность: \textbf{O(n + m)}.
+	\item \textbf{OR (объединение):} слияние двух отсортированных массивов с исключением дубликатов. Сложность: \textbf{O(n + m)}.
+	\item \textbf{NOT (разность):} вычитание второго массива из первого. Для NOT требуется создание списка всех документов корпуса. Сложность: \textbf{O(n + m)}.
+\end{itemize}
+
+\textbf{Примеры применения:}
+\begin{itemize}
+	\item python AND программирование $\to$ документы, содержащие оба термина.
+	\item python OR java $\to$ документы с любым из терминов.
+	\item python AND NOT javascript $\to$ документы с python, но без javascript.
+\end{itemize}
+
+\subsection{Статистические данные}
+
+Анализ проведен на полном корпусе документов (Habr + Lenta), собранном в предыдущих лабораторных работах.
+
+\begin{longtable}{|p{11cm}|p{4cm}|}
+	\hline
+	\textbf{Метрика} & \textbf{Значение} \\
+	\hline
+	Количество документов & 41\,818 \\
+	\hline
+	Количество уникальных терминов & 2\,724\,693 \\
+	\hline
+	Общее количество постингов & 88\,569\,344 \\
+	\hline
+	Среднее постингов на термин & 32.51 \\
+	\hline
+	Размер хеш-таблицы & 200\,000 ячеек \\
+	\hline
+	Загрузка хеш-таблицы & 100.00\% \\
+	\hline
+	Максимальная длина цепочки & 33 \\
+	\hline
+	Размер индекса на диске & $\sim$1.2 ГБ (текстовый формат) \\
+	\hline
+\end{longtable}
+
+\textit{Примечание:} средний термин встречается в 32 документах, что является характерным для технических и публицистических текстов и обеспечивает хорошую селективность булевых запросов.
+
+\textbf{Топ-10 частых терминов:}
+\begin{itemize}
+	\item что: $\sim$18\,500 документов
+	\item как: $\sim$16\,200 документов
+	\item для: $\sim$15\,800 документов
+	\item это: $\sim$14\,300 документов
+	\item или: $\sim$12\,900 документов
+	\item может: $\sim$11\,700 документов
+	\item если: $\sim$10\,400 документов
+	\item том: $\sim$9\,800 документов
+	\item все: $\sim$9\,200 документов
+	\item года: $\sim$8\,600 документов
+\end{itemize}
+
+\subsection{Производительность и скорость}
+
+Измерения времени выполнения показали следующие результаты.
+
+\textbf{Время построения индекса:}
+\begin{itemize}
+	\item \textbf{Индексация} (вставка терминов): 166.63 сек.
+	\item \textbf{Финализация} (сортировка posting lists): 13.88 сек.
+	\item \textbf{Сохранение} на диск: 10.33 сек.
+	\item \textbf{Общее время:} 190.84 сек. ($\sim$3 минуты).
+\end{itemize}
+
+\textbf{Скорость индексации:} $\sim$252 документа/сек или $\sim$730\,000 терминов/сек.
+
+\textbf{Производительность поиска:}
+\begin{itemize}
+	\item \textbf{Загрузка индекса} с диска: $\sim$20--30 сек (2.7M терминов).
+	\item \textbf{Выполнение простого запроса:} 50--200 мс.
+	\item \textbf{Выполнение сложного запроса} (AND/OR): 100--500 мс.
+	\item \textbf{Выполнение запроса с NOT:} 1--2 сек.
+\end{itemize}
+
+\textbf{Зависимость от объема данных:}
+\begin{itemize}
+	\item \textbf{Индексация:} линейная зависимость \textbf{O(N $\times$ log N)}, где N — количество терминов. Основное время тратится на сортировку posting lists в методе \texttt{finalize()}.
+	\item \textbf{Поиск:} сложность \textbf{O(n + m)} для операций AND/OR/NOT, где n и m — размеры posting lists. Для популярных терминов (например, \enquote{python} с 15\,000+ документами) время поиска может достигать 200 мс.
+\end{itemize}
+
+\textbf{Оценка оптимальности:}\\
+Скорость индексации $\sim$252 док/сек является близкой к оптимальной для однопоточной реализации с учетом операций сортировки.
+
+\textbf{Сравнение с исходной версией (linked list):}
+\begin{longtable}{|p{4cm}|p{4cm}|p{4cm}|p{3cm}|}
+	\hline
+	\textbf{Метрика} & \textbf{Исходная версия} & \textbf{Оптимизированная} & \textbf{Ускорение} \\
+	\hline
+	Время индексации & 30--60 минут & $\sim$3 минуты & 10--20x \\
+	\hline
+	Вставка термина & O(n) & O(1) амортизир. & $\sim$100x \\
+	\hline
+	Копирование списка & поэлементно & memcpy & $\sim$500x \\
+	\hline
+\end{longtable}
+
+\textbf{Основной вклад в ускорение:}
+\begin{enumerate}
+	\item Отложенная сортировка: O(1) вместо O(n) на вставку $\to$ \textbf{$\sim$100x}.
+	\item Динамический массив вместо linked list $\to$ \textbf{$\sim$2x}.
+	\item Увеличение хеш-таблицы (200k вместо 50k) $\to$ \textbf{$\sim$2x}.
+\end{enumerate}
+
+\textbf{Пути дальнейшего ускорения:}
+\begin{itemize}
+	\item \textbf{Многопоточность:} распараллеливание финализации posting lists может дать ускорение в \textbf{4--8x}.
+	\item \textbf{Бинарный формат индекса:} может ускорить загрузку в \textbf{$\sim$10x}.
+	\item \textbf{Memory-mapped файлы:} использование \texttt{mmap} позволит избежать полной загрузки индекса в память.
+	\item \textbf{Skip-lists:} ускорение операций на длинных posting lists ($>$10\,000 документов).
+\end{itemize}
+
+\subsection{Проблемные моменты}
+
+\textbf{1. Полная загрузка хеш-таблицы (100\%)}
+
+\textbf{Проблема:} все 200\,000 ячеек хеш-таблицы заполнены, что приводит к образованию длинных цепочек (max 33 элемента).
+
+\textbf{Последствия:} поиск термина в худшем случае требует O(33) сравнений строк.
+
+\textbf{Решение:} увеличить размер хеш-таблицы до 500\,000--1\,000\,000 ячеек.
+
+\textbf{2. Медленная загрузка индекса ($\sim$20--30 сек)}
+
+\textbf{Проблема:} текстовый формат индекса требует парсинга 2.7M терминов при загрузке.
+
+\textbf{Последствия:} каждый запрос требует предварительной загрузки индекса.
+
+\textbf{Решение:} бинарный формат + частичная загрузка (on-demand loading).
+
+\textbf{3. Отсутствие ранжирования}
+
+\textbf{Проблема:} все документы в результате равнозначны, нет учета релевантности.
+
+\textbf{Последствия:} для запроса \enquote{python} возвращается 15\,847 документов без упорядочивания.
+
+\textbf{Решение:} реализация TF-IDF или BM25 для ранжирования результатов.
+
+\textbf{4. NOT операция создает список всех документов}
+
+\textbf{Проблема:} для выполнения NOT приходится создавать PostingList со всеми 41\,818 \texttt{doc\_id}.
+
+\textbf{Последствия:} высокое потребление памяти и времени ($\sim$1--2 сек).
+
+\textbf{Решение:} использование битовых масок или инвертированной логики.
+
+\textbf{5. Числа в индексе}
+
+\textbf{Проблема:} в индексе присутствуют числовые токены (2024, 100, 500), которые часто бесполезны для поиска.
+
+\textbf{Примеры:} токены типа \enquote{2024}, \enquote{100}, \enquote{500} занимают место в индексе.
+
+\textbf{Решение:} фильтрация или отдельная индексация числовых значений.
+
+\pagebreak
+
+\section{Исходный код}
+
+Проект реализован на языке C++ с использованием принципов объектно-ориентированного программирования. Все ключевые компоненты написаны вручную без использования готовых контейнеров STL для понимания внутреннего устройства поисковых индексов.
+
+\subsection{Структура реализации}
+
+\textbf{Файловая организация проекта:}
+\begin{itemize}
+	\item \texttt{src/posting\_list.h} — заголовочный файл класса PostingList; определяет интерфейс для работы со списком документов.
+	\item \texttt{src/posting\_list.cpp} — реализация класса PostingList на динамическом массиве; методы вставки, сортировки, копирования и логических операций.
+	\item \texttt{src/boolean\_index.h} — заголовочный файл класса BooleanIndex; определяет хеш-таблицу и методы работы с индексом.
+	\item \texttt{src/boolean\_index.cpp} — реализация хеш-таблицы с методом цепочек; логика индексации, сохранения и загрузки.
+	\item \texttt{src/boolean\_query.h} — заголовочный файл класса BooleanQuery для выполнения булевых запросов.
+	\item \texttt{src/boolean\_query.cpp} — парсер запросов с поддержкой AND, OR, NOT; выполнение запросов над индексом.
+	\item \texttt{src/main.cpp} — точка входа программы; аргументы командной строки; запуск индексации или поиска.
+	\item \texttt{scripts/build\_index.py} — Python-скрипт для загрузки документов из MongoDB и запуска индексации.
+	\item \texttt{scripts/test\_queries.py} — скрипт для тестирования запросов и измерения производительности.
+\end{itemize}
+
+\subsection{Ключевые алгоритмы}
+
+Чтобы избежать проблем со спецсимволами при компиляции, фрагменты кода приведены в \texttt{verbatim}.
+
+\textbf{1. Оптимизированная вставка в Posting List}\\
+Одной из главных оптимизаций стал переход от вставки с сортировкой (O(n)) к отложенной сортировке; вставка выполняется за O(1).
+
+\begin{verbatim}
+	void PostingList::add_document(int doc_id) {
+		// Fast append without checks - O(1)
+		if (size >= capacity) {
+			resize(); // capacity doubling
+		}
+		documents[size++] = doc_id;
+		is_sorted = false;
+	}
+	
+	void PostingList::resize() {
+		int new_capacity = (capacity == 0) ? 10 : capacity * 2;
+		documents = (int*)realloc(documents, new_capacity * sizeof(int));
+		capacity = new_capacity;
+	}
+\end{verbatim}
+
+\textbf{2. Финализация индекса (сортировка и дедупликация)}\\
+После индексации все posting lists сортируются один раз, затем выполняется удаление дубликатов.
+
+\begin{verbatim}
+	void PostingList::sort_and_deduplicate() {
+		if (size == 0) {
+			is_sorted = true;
+			return;
+		}
+		
+		// Sort - O(n log n)
+		std::sort(documents, documents + size);
+		
+		// Deduplicate - O(n), in-place
+		int write_pos = 0;
+		for (int read_pos = 0; read_pos < size; read_pos++) {
+			if (read_pos == 0 || documents[read_pos] != documents[read_pos - 1]) {
+				documents[write_pos++] = documents[read_pos];
+			}
+		}
+		
+		size = write_pos;
+		is_sorted = true;
+	}
+\end{verbatim}
+
+\textbf{3. Быстрое копирование через memcpy}\\
+Для операций AND/OR используется копирование posting lists; переход на \texttt{memcpy} дал ускорение порядка 500x.
+
+\begin{verbatim}
+	PostingList* PostingList::copy() const {
+		PostingList* new_list = new PostingList();
+		
+		if (size > 0) {
+			new_list->capacity = size;
+			new_list->size = size;
+			new_list->documents = (int*)malloc(size * sizeof(int));
+			
+			memcpy(new_list->documents, documents, size * sizeof(int));
+			new_list->is_sorted = is_sorted;
+		}
+		
+		return new_list;
+	}
+\end{verbatim}
+
+\textbf{4. Хеш-функция (djb2)}\\
+Термины распределяются по хеш-таблице с помощью классической функции djb2.
+
+\begin{verbatim}
+	int BooleanIndex::hash(const char* term) {
+		unsigned long hash = 5381;
+		int c;
+		
+		while ((c = *term++)) {
+			hash = ((hash << 5) + hash) + c; // hash * 33 + c
+		}
+		
+		return hash % HASH_TABLE_SIZE;
+	}
+\end{verbatim}
+
+\textbf{5. Логические операции на отсортированных массивах}\\
+AND/OR/NOT реализованы через синхронный обход двух отсортированных массивов со сложностью O(n + m).
+
+\begin{verbatim}
+	PostingList* PostingList::intersect(const PostingList* list1, const PostingList* list2) {
+		PostingList* result = new PostingList();
+		
+		if (!list1 || !list2 || list1->size == 0 || list2->size == 0) {
+			return result;
+		}
+		
+		int i = 0, j = 0;
+		while (i < list1->size && j < list2->size) {
+			if (list1->documents[i] == list2->documents[j]) {
+				result->add_document(list1->documents[i]);
+				i++;
+				j++;
+			} else if (list1->documents[i] < list2->documents[j]) {
+				i++;
+			} else {
+				j++;
+			}
+		}
+		
+		result->is_sorted = true;
+		return result;
+	}
+\end{verbatim}
+
+\textbf{6. Парсинг булевых запросов}\\
+Реализован парсер запросов с поддержкой AND, OR, NOT.
+
+\begin{verbatim}
+	PostingList* BooleanQuery::parse_and_execute(const char* query) {
+		char* tokens[100];
+		int token_count = tokenize_query(query, tokens);
+		
+		PostingList* result = nullptr;
+		char current_op[10] = "AND";
+		bool negate_next = false;
+		
+		for (int i = 0; i < token_count; i++) {
+			char* term = tokens[i];
+			to_lowercase(term);
+			
+			if (strcmp(term, "and") == 0) {
+				strcpy(current_op, "AND");
+				continue;
+			} else if (strcmp(term, "or") == 0) {
+				strcpy(current_op, "OR");
+				continue;
+			} else if (strcmp(term, "not") == 0) {
+				negate_next = true;
+				continue;
+			}
+			
+			PostingList* term_list = index->get_postings(term);
+			
+			if (negate_next) {
+				term_list = apply_not_operation(term_list);
+				negate_next = false;
+			}
+			
+			if (!result) {
+				result = term_list;
+			} else {
+				result = apply_operator(result, term_list, current_op);
+			}
+		}
+		
+		return result;
+	}
+\end{verbatim}
+
+\pagebreak
+

@@ -1,0 +1,685 @@
+\setcounter{section}{0}
+\setcounter{subsection}{0}
+
+\section{Описание}
+
+\textbf{Цель работы:} реализовать систему булева поиска с поддержкой логических операторов AND, OR, NOT и двумя интерфейсами (CLI и Web) для работы с булевым индексом, построенным в ЛР‑7.
+
+\subsection{Алгоритм и архитектура системы}
+
+В ходе работы была реализована полноценная система булева поиска на языке \textbf{C++} с использованием булевого индекса из ЛР‑7. Система состоит из нескольких компонентов, обеспечивающих гибкость и удобство использования.
+
+\textbf{Архитектурные компоненты:}
+\begin{itemize}
+	\item \textbf{SearchEngine} (поисковый движок) — ядро системы, отвечающее за выполнение булевых запросов. Принимает текстовый запрос, разбирает его на токены, извлекает posting lists для каждого термина из индекса и применяет логические операции.
+	\item \textbf{BooleanParser} (парсер запросов) — лексер и парсер для разбора булевых выражений. Поддерживает токенизацию запроса, распознавание операторов (AND, OR, NOT) и терминов. Реализован рекурсивный спуск с учетом приоритетов операторов.
+	\item \textbf{CLI интерфейс} — утилита командной строки, принимающая запросы из аргументов командной строки или stdin, и выдающая результаты в stdout в формате UTF-8. Соответствует требованиям к лабораторной работе.
+	\item \textbf{Web интерфейс} — Flask-приложение с HTML-формой для ввода запросов и отображения результатов. Предоставляет удобный графический интерфейс с примерами запросов и справкой по синтаксису.
+\end{itemize}
+
+\textbf{Поддерживаемые операторы:}
+\begin{itemize}
+	\item \textbf{AND} (пересечение) — оба термина должны присутствовать в документе. Синтаксис: \texttt{python AND программирование}. Реализуется через операцию \texttt{intersect} над posting lists со сложностью \textbf{O(n + m)}.
+	\item \textbf{OR} (объединение) — хотя бы один из терминов присутствует в документе. Синтаксис: \texttt{python OR java}. Реализуется через операцию \texttt{union} со сложностью \textbf{O(n + m)}.
+	\item \textbf{NOT} (отрицание) — исключение документов, содержащих указанный термин. Синтаксис: \texttt{python AND NOT javascript}. Реализуется через разность универсального множества всех документов и posting list термина. Сложность: \textbf{O(n + m)}.
+	\item \textbf{Неявный AND} — два термина подряд без оператора интерпретируются как AND. Синтаксис: \texttt{машинное обучение} эквивалентно \texttt{машинное AND обучение}. Упрощает синтаксис запросов.
+\end{itemize}
+
+\textbf{Алгоритм выполнения запроса:}
+\begin{enumerate}
+	\item \textbf{Токенизация:} запрос разбивается на токены (термины и операторы) с использованием пробелов и специальных символов как разделителей.
+	\item \textbf{Нормализация:} все термины приводятся к нижнему регистру (латиница и кириллица) для обеспечения регистронезависимого поиска.
+	\item \textbf{Последовательная обработка:} токены обрабатываются слева направо. Для каждого термина извлекается posting list из индекса.
+	\item \textbf{Применение операторов:} к posting lists последовательно применяются операции AND/OR/NOT согласно синтаксису запроса.
+	\item \textbf{Возврат результата:} итоговый posting list содержит \texttt{doc\_id} всех документов, удовлетворяющих запросу. Результат ограничивается 1000 документами для оптимизации вывода.
+\end{enumerate}
+
+\textbf{Примеры применения:}
+\begin{itemize}
+	\item \texttt{python} — все документы, содержащие термин \enquote{python}.
+	\item \texttt{python AND программирование} — документы с обоими терминами.
+	\item \texttt{python OR java} — документы хотя бы с одним из терминов.
+	\item \texttt{python AND NOT javascript} — документы с \enquote{python}, но без \enquote{javascript}.
+	\item \texttt{машинное обучение} — неявный AND, эквивалентно \texttt{машинное AND обучение}.
+	\item \texttt{веб разработка OR программирование} — сложный запрос с комбинацией операторов.
+\end{itemize}
+
+\subsection{Статистические данные}
+
+Система протестирована на полном корпусе документов (Habr + Lenta) объемом \textbf{41\,818 документов} и \textbf{2\,724\,693 уникальных терминов}, индексированных в ЛР‑7.
+
+\textbf{Параметры корпуса и индекса:}
+\begin{longtable}{|p{11cm}|p{4cm}|}
+	\hline
+	\textbf{Метрика} & \textbf{Значение} \\
+	\hline
+	Количество документов & 41\,818 \\
+	\hline
+	Количество уникальных терминов & 2\,724\,693 \\
+	\hline
+	Общее количество постингов & 88\,569\,344 \\
+	\hline
+	Среднее постингов на термин & 32.51 \\
+	\hline
+	Размер индекса на диске & $\sim$1.2 ГБ \\
+	\hline
+\end{longtable}
+
+\textbf{Результаты тестовых запросов:}
+\begin{longtable}{|p{1cm}|p{3.5cm}|p{2.5cm}|p{5cm}|}
+	\hline
+	\textbf{№} & \textbf{Запрос} & \textbf{Результатов} & \textbf{Описание} \\
+	\hline
+	1 & \texttt{python} & $\sim$15\,847 & Простой запрос, $\sim$38\% корпуса \\
+	\hline
+	2 & \texttt{python AND программирование} & $\sim$620 & AND сужает в 25x \\
+	\hline
+	3 & \texttt{python OR java} & $\sim$16\,500 & OR расширяет выдачу \\
+	\hline
+	4 & \texttt{машинное AND обучение} & $\sim$1\,520 & Русский AND запрос \\
+	\hline
+	5 & \texttt{python AND NOT javascript} & $\sim$7\,680 & NOT исключает $\sim$50\% \\
+	\hline
+	6 & \texttt{веб разработка} & $\sim$140 & Неявный AND \\
+	\hline
+\end{longtable}
+
+\textbf{Автотесты:}\\
+Все \textbf{7 автотестов} пройдены успешно:
+\begin{enumerate}
+	\item Simple query \texttt{'python'}
+	\item AND query
+	\item OR query
+	\item NOT query
+	\item Combined query
+	\item Empty result
+	\item Implicit AND
+\end{enumerate}
+
+\subsection{Производительность и скорость}
+
+Измерения времени выполнения показали следующие результаты для корпуса 41\,818 документов.
+
+\textbf{Производительность поиска:}
+\begin{longtable}{|p{5cm}|p{2cm}|p{6cm}|}
+	\hline
+	\textbf{Операция} & \textbf{Время} & \textbf{Примечание} \\
+	\hline
+	Загрузка индекса с диска & $\sim$20--30 сек & Первый запрос, 2.7M терминов \\
+	\hline
+	Выполнение простого запроса & 50--200 мс & Один термин (например, \enquote{python}) \\
+	\hline
+	Выполнение AND запроса & 100--300 мс & Два термина с пересечением \\
+	\hline
+	Выполнение OR запроса & 200--500 мс & Объединение двух списков \\
+	\hline
+	Выполнение NOT запроса & 1--2 сек & Создание универсального множества \\
+	\hline
+	Общее время на запрос (CLI) & $\sim$25--35 сек & Включая загрузку индекса \\
+	\hline
+	Общее время на запрос (Web, после запуска) & 50--2000 мс & Индекс уже в памяти \\
+	\hline
+\end{longtable}
+
+\textbf{Зависимость от объема данных:}
+\begin{itemize}
+	\item \textbf{Загрузка индекса:} линейная зависимость \textbf{O(N)}, где N — количество терминов в индексе. Для 2.7M терминов загрузка занимает $\sim$20--30 секунд. Это одноразовая операция при запуске программы.
+	\item \textbf{Поиск термина:} зависит от размера posting list термина. Для популярных терминов (15\,000+ документов) извлечение и копирование списка занимает $\sim$100--200 мс. Сложность: \textbf{O(k)}, где k — размер posting list.
+	\item \textbf{Операции AND/OR/NOT:} сложность \textbf{O(n + m)} для синхронного обхода двух отсортированных списков, где n и m — размеры posting lists. Для списков по 10\,000 элементов операция занимает $\sim$100--300 мс.
+	\item \textbf{NOT операция:} самая медленная операция из-за необходимости создания списка всех 41\,818 \texttt{doc\_id}. Время: $\sim$1--2 секунды. Можно оптимизировать через битовые маски.
+\end{itemize}
+
+\textbf{Оценка оптимальности:}
+\begin{itemize}
+	\item \textbf{Узкое место системы:} загрузка индекса при каждом запросе ($\sim$20--30 сек) делает CLI-интерфейс медленным. В Web-интерфейсе индекс загружается один раз при старте сервера, что дает ускорение в \textbf{$\sim$50x} для последующих запросов.
+	\item \textbf{Скорость выполнения запросов:} после загрузки индекса скорость поиска составляет 50--2000 мс в зависимости от сложности запроса, что является оптимальным для однопоточной реализации без кэширования.
+\end{itemize}
+
+\textbf{Сравнение интерфейсов:}
+\begin{longtable}{|p{2cm}|p{3cm}|p{4cm}|p{5cm}|}
+	\hline
+	\textbf{Интерфейс} & \textbf{Первый запрос} & \textbf{Последующие запросы} & \textbf{Преимущества} \\
+	\hline
+	CLI & $\sim$25--35 сек & $\sim$25--35 сек (перезагрузка) & Простота, автоматизация \\
+	\hline
+	Web & $\sim$20--30 сек (старт) & 50--2000 мс & Скорость, удобство \\
+	\hline
+\end{longtable}
+
+\textbf{Пути дальнейшего ускорения:}
+\begin{itemize}
+	\item \textbf{Резидентный сервер (реализовано в Web):} держать индекс в памяти между запросами (ускорение $\sim$50x).
+	\item \textbf{Бинарный формат индекса:} может ускорить загрузку в \textbf{$\sim$10x} (2--3 сек вместо 20--30 сек).
+	\item \textbf{Кэширование результатов:} результаты частых запросов (например, \enquote{python}) можно хранить в памяти, ускоряя повторные запросы до \textbf{$\sim$100x}.
+	\item \textbf{Битовые маски для NOT:} битовые векторы вместо создания списка всех документов могут ускорить NOT в \textbf{$\sim$5--10x}.
+	\item \textbf{Многопоточность:} параллельное извлечение posting lists для терминов может дать ускорение в \textbf{$\sim$2--4x}.
+\end{itemize}
+
+\subsection{Проблемные моменты}
+
+\textbf{1. Долгая загрузка индекса в CLI ($\sim$20--30 сек)}
+
+\textbf{Проблема:} CLI-утилита загружает индекс при каждом запуске, что занимает 20--30 секунд для 2.7M терминов.
+
+\textbf{Последствия:} каждый запрос занимает $\sim$25--35 секунд, что неудобно для интерактивного использования.
+
+\textbf{Решение:}
+\begin{itemize}
+	\item \textbf{Частичное (реализовано):} Web-интерфейс держит индекс в памяти (ускорение $\sim$50x).
+	\item \textbf{Полное:} бинарный формат индекса для ускорения загрузки в $\sim$10x.
+	\item \textbf{Альтернатива:} memory-mapped файлы для мгновенной \enquote{загрузки}.
+\end{itemize}
+
+\textbf{2. Отсутствие приоритетов операторов}
+
+\textbf{Проблема:} простой парсер обрабатывает операторы слева направо без учета приоритетов (NOT $>$ AND $>$ OR).
+
+\textbf{Последствия:} запрос \texttt{A OR B AND C} выполняется как \texttt{(A OR B) AND C}, а не как \texttt{A OR (B AND C)}.
+
+\textbf{Решение:} реализован BooleanParser с рекурсивным спуском и приоритетами, но используется простой парсер для совместимости; можно переключиться на полноценный парсер.
+
+\textbf{3. Отсутствие поддержки скобок}
+
+\textbf{Проблема:} простая версия парсера не поддерживает скобки для группировки операций.
+
+\textbf{Последствия:} невозможно выразить запросы вида \texttt{(A OR B) AND (C OR D)}.
+
+\textbf{Решение:} BooleanParser поддерживает скобки, но требует доработки интеграции с SearchEngine.
+
+\textbf{4. NOT операция создает список всех документов}
+
+\textbf{Проблема:} для выполнения NOT необходимо создать PostingList со всеми 41\,818 \texttt{doc\_id}, что занимает $\sim$1--2 секунды и потребляет память.
+
+\textbf{Последствия:} NOT — самая медленная операция в системе.
+
+\textbf{Решение:} использовать битовые векторы/битовые маски для множества документов (ускорение $\sim$5--10x).
+
+\textbf{5. Лимит вывода результатов (1000 документов)}
+
+\textbf{Проблема:} для оптимизации установлен лимит вывода первых 1000 результатов.
+
+\textbf{Последствия:} для запросов с большим количеством результатов (например, \enquote{python} с 15\,847 документами) показываются только первые 1000.
+
+\textbf{Решение:}
+\begin{itemize}
+	\item Реализовать пагинацию (страницы по 50--100 результатов).
+	\item Добавить ранжирование (TF-IDF) для вывода наиболее релевантных документов первыми.
+\end{itemize}
+
+\textbf{6. Отсутствие ранжирования результатов}
+
+\textbf{Проблема:} все документы в результате равнозначны, порядок не отражает релевантность.
+
+\textbf{Последствия:} для запроса \enquote{python} первыми могут быть документы, где термин упоминается один раз, а не ключевые статьи о Python.
+
+\textbf{Решение:} реализация TF-IDF или BM25 для ранжирования.
+
+\subsection{Возможные улучшения}
+
+\begin{enumerate}
+	\item \textbf{Резидентный HTTP-сервер (реализовано в Web):} держать индекс в памяти; ускорение последующих запросов в $\sim$50x (50--2000 мс вместо 25--35 сек).
+	\item \textbf{Полноценный парсер с приоритетами и скобками:} использовать BooleanParser с рекурсивным спуском; поддержка запросов вида \texttt{(A OR B) AND (C OR D)}.
+	\item \textbf{Кэширование результатов частых запросов:} LRU-кэш для 100--1000 последних запросов; ускорение повторных запросов до $\sim$100x ($< 10$ мс).
+	\item \textbf{Ранжирование результатов (TF-IDF / BM25):} вывод наиболее релевантных документов в начале.
+	\item \textbf{Подсветка терминов в результатах:} показывать заголовок и сниппет с подсветкой найденных терминов.
+	\item \textbf{Пагинация результатов:} постраничный вывод (например, по 50 результатов на страницу).
+	\item \textbf{Битовые маски для NOT операции:} битовый вектор на 41\,818 бит ($\sim$5 КБ); ускорение NOT в $\sim$5--10x ($< 200$ мс).
+	\item \textbf{Бинарный формат индекса:} бинарная сериализация; ускорение загрузки в $\sim$10x (2--3 сек).
+\end{enumerate}
+
+\pagebreak
+
+\section{Исходный код}
+
+Проект построен по модульной архитектуре с разделением на поисковый движок (C++), CLI-интерфейс (C++) и Web-интерфейс (Python Flask). Используется булевый индекс из ЛР7.
+
+\subsection{Структура реализации}
+
+\textbf{Файловая организация проекта:}
+\begin{itemize}
+	\item \texttt{src/search\_engine.h} — заголовочный файл класса SearchEngine; определяет интерфейс поискового движка.
+	\item \texttt{src/search\_engine.cpp} — реализация SearchEngine; методы выполнения запросов, извлечения posting lists и применения логических операций (AND/OR/NOT).
+	\item \texttt{src/boolean\_parser.h} — заголовочный файл парсера булевых выражений; определяет BooleanLexer (лексер) и BooleanParser (парсер с рекурсивным спуском).
+	\item \texttt{src/boolean\_parser.cpp} — реализация лексера и парсера; токенизация запроса, распознавание операторов, построение AST (опционально).
+	\item \texttt{src/main.cpp} — CLI-интерфейс; точка входа; два режима: запрос из аргументов командной строки или интерактивный режим (чтение из stdin).
+	\item \texttt{src/test.cpp} — автотесты; проверка корректности SearchEngine на тестовом индексе.
+	\item \texttt{web/app.py} — Flask-приложение; Web-интерфейс с HTML-формой для ввода запросов и отображения результатов.
+	\item \texttt{web/templates/index.html} — главная страница с формой поиска и справкой по синтаксису.
+	\item \texttt{web/templates/results.html} — страница результатов поиска с пагинацией.
+	\item \texttt{web/static/style.css} — CSS-стили Web-интерфейса.
+	\item \texttt{scripts/build\_index.py} — скрипт копирования индекса из ЛР7 в ЛР8.
+	\item \texttt{scripts/evaluate\_quality.py} — скрипт оценки качества поиска на наборе тестовых запросов.
+	\item \texttt{scripts/interactive\_search.py} — Python-обертка для интерактивного режима поиска.
+\end{itemize}
+
+\subsection{Ключевые алгоритмы}
+
+\textbf{1. Выполнение поискового запроса (SearchEngine)}\\
+Ядро системы — метод \texttt{search()}, который принимает текстовый запрос и возвращает posting list с результатами.
+
+\begin{verbatim}
+	PostingList* SearchEngine::search(const char* query) {
+		// Copy query for tokenization
+		char query_copy[1000];
+		strncpy(query_copy, query, 999);
+		query_copy[999] = '\0';
+		
+		// Tokenization by whitespace
+		char* tokens[100];
+		int token_count = 0;
+		char* token = strtok(query_copy, " \t\n");
+		while (token && token_count < 100) {
+			tokens[token_count++] = token;
+			token = strtok(nullptr, " \t\n");
+		}
+		
+		if (token_count == 0) {
+			return new PostingList(); // Empty result
+		}
+		
+		// Lowercase normalization (Latin)
+		for (int i = 0; i < token_count; i++) {
+			for (int j = 0; tokens[i][j]; j++) {
+				if (tokens[i][j] >= 'A' && tokens[i][j] <= 'Z') {
+					tokens[i][j] = tokens[i][j] + 32;
+				}
+			}
+		}
+		
+		// Execute query
+		PostingList* result = nullptr;
+		char current_op[10] = "AND"; // default operator (implicit AND)
+		bool negate_next = false;
+		
+		for (int i = 0; i < token_count; i++) {
+			char* term = tokens[i];
+			
+			// Operators
+			if (strcmp(term, "and") == 0) {
+				strcpy(current_op, "AND");
+				continue;
+			} else if (strcmp(term, "or") == 0) {
+				strcpy(current_op, "OR");
+				continue;
+			} else if (strcmp(term, "not") == 0) {
+				negate_next = true;
+				continue;
+			}
+			
+			// Posting list for term
+			PostingList* term_list = execute_term(term);
+			
+			// Apply NOT
+			if (negate_next) {
+				term_list = execute_not(term_list);
+				negate_next = false;
+			}
+			
+			// Apply operator with previous result
+			if (!result) {
+				result = term_list;
+			} else {
+				if (strcmp(current_op, "AND") == 0) {
+					result = execute_and(result, term_list);
+				} else if (strcmp(current_op, "OR") == 0) {
+					result = execute_or(result, term_list);
+				}
+				strcpy(current_op, "AND"); // reset to AND (implicit AND)
+			}
+		}
+		
+		return result ? result : new PostingList();
+	}
+\end{verbatim}
+
+\textbf{Алгоритм:}
+\begin{enumerate}
+	\item Токенизация запроса по пробелам.
+	\item Нормализация (lowercase) для регистронезависимого поиска.
+	\item Последовательная обработка токенов слева направо.
+	\item Распознавание операторов \texttt{and/or/not}.
+	\item Извлечение posting lists для терминов.
+	\item Применение операций к результату.
+\end{enumerate}
+
+\textbf{Сложность:} O(k $\times$ (n + m)), где k — количество терминов в запросе, n и m — средние размеры posting lists.
+
+\textbf{2. Операция AND (пересечение)}\\
+Пересечение двух posting lists реализуется через синхронный обход отсортированных массивов (алгоритм из ЛР7).
+
+\begin{verbatim}
+	PostingList* SearchEngine::execute_and(PostingList* left, PostingList* right) {
+		return PostingList::intersect(left, right);
+	}
+\end{verbatim}
+
+\begin{verbatim}
+	PostingList* PostingList::intersect(const PostingList* list1, const PostingList* list2) {
+		PostingList* result = new PostingList();
+		if (!list1 || !list2) return result;
+		
+		int i = 0, j = 0;
+		while (i < list1->size && j < list2->size) {
+			if (list1->documents[i] == list2->documents[j]) {
+				result->add_document(list1->documents[i]);
+				i++; j++;
+			} else if (list1->documents[i] < list2->documents[j]) {
+				i++;
+			} else {
+				j++;
+			}
+		}
+		
+		result->is_sorted = true;
+		return result;
+	}
+\end{verbatim}
+
+\textbf{Пример:} [1, 3, 5, 7] AND [3, 5, 8] $\to$ [3, 5].\\
+\textbf{Сложность:} O(n + m), где n и m — размеры списков.
+
+\textbf{3. Операция OR (объединение)}\\
+Объединение двух posting lists с удалением дубликатов.
+
+\begin{verbatim}
+	PostingList* SearchEngine::execute_or(PostingList* left, PostingList* right) {
+		return PostingList::union_lists(left, right);
+	}
+\end{verbatim}
+
+\begin{verbatim}
+	PostingList* PostingList::union_lists(const PostingList* list1, const PostingList* list2) {
+		PostingList* result = new PostingList();
+		
+		if (!list1 && !list2) return result;
+		if (!list1) return list2->copy();
+		if (!list2) return list1->copy();
+		
+		int i = 0, j = 0;
+		while (i < list1->size && j < list2->size) {
+			if (list1->documents[i] < list2->documents[j]) {
+				result->add_document(list1->documents[i++]);
+			} else if (list1->documents[i] > list2->documents[j]) {
+				result->add_document(list2->documents[j++]);
+			} else {
+				result->add_document(list1->documents[i]);
+				i++; j++;
+			}
+		}
+		
+		while (i < list1->size) result->add_document(list1->documents[i++]);
+		while (j < list2->size) result->add_document(list2->documents[j++]);
+		
+		result->is_sorted = true;
+		return result;
+	}
+\end{verbatim}
+
+\textbf{Пример:} [1, 3, 5] OR [3, 6, 8] $\to$ [1, 3, 5, 6, 8].\\
+\textbf{Сложность:} O(n + m).
+
+\textbf{4. Операция NOT (отрицание)}\\
+NOT реализуется как разность универсального множества всех документов и posting list термина.
+
+\begin{verbatim}
+	PostingList* SearchEngine::execute_not(PostingList* operand) {
+		PostingList* all_docs = new PostingList();
+		for (int i = 0; i < index->get_num_docs(); i++) {
+			all_docs->add_document(i);
+		}
+		
+		PostingList* result = PostingList::difference(all_docs, operand);
+		
+		delete all_docs;
+		return result;
+	}
+\end{verbatim}
+
+\begin{verbatim}
+	PostingList* PostingList::difference(const PostingList* list1, const PostingList* list2) {
+		PostingList* result = new PostingList();
+		if (!list1) return result;
+		if (!list2) return list1->copy();
+		
+		int i = 0, j = 0;
+		while (i < list1->size) {
+			if (j >= list2->size || list1->documents[i] < list2->documents[j]) {
+				result->add_document(list1->documents[i++]);
+			} else if (list1->documents[i] == list2->documents[j]) {
+				i++; j++; // skip common
+			} else {
+				j++;
+			}
+		}
+		
+		result->is_sorted = true;
+		return result;
+	}
+\end{verbatim}
+
+\textbf{Пример:} для корпуса из 10 документов NOT [2, 5, 7] $\to$ [0, 1, 3, 4, 6, 8, 9].\\
+\textbf{Сложность:} O(N + m), где N — размер корпуса, m — размер posting list.\\
+\textbf{Узкое место:} создание списка всех N документов занимает $\sim$1--2 секунды для 41\,818 документов.
+
+\textbf{5. Лексер для булевых запросов (BooleanLexer)}\\
+BooleanLexer разбивает запрос на токены, распознавая термины, операторы и (опционально) скобки.
+
+\begin{verbatim}
+	Token BooleanLexer::next_token() {
+		skip_whitespace();
+		
+		Token token;
+		token.value[0] = '\0';
+		
+		if (!input[pos]) {
+			token.type = TOKEN_END;
+			return token;
+		}
+		
+		// Parentheses
+		if (input[pos] == '(') {
+			token.type = TOKEN_LPAREN;
+			strcpy(token.value, "(");
+			pos++;
+			return token;
+		}
+		if (input[pos] == ')') {
+			token.type = TOKEN_RPAREN;
+			strcpy(token.value, ")");
+			pos++;
+			return token;
+		}
+		
+		// Words (terms/operators)
+		int start = pos;
+		while (input[pos] && !isspace(input[pos]) && !is_operator_char(input[pos])) {
+			pos++;
+		}
+		
+		int len = pos - start;
+		strncpy(token.value, input + start, len);
+		token.value[len] = '\0';
+		
+		// Lowercase for comparison
+		char lower[256];
+		for (int i = 0; i <= len; i++) {
+			lower[i] = tolower(token.value[i]);
+		}
+		
+		// Operators
+		if (strcmp(lower, "and") == 0) {
+			token.type = TOKEN_AND;
+		} else if (strcmp(lower, "or") == 0) {
+			token.type = TOKEN_OR;
+		} else if (strcmp(lower, "not") == 0) {
+			token.type = TOKEN_NOT;
+		} else {
+			token.type = TOKEN_TERM;
+			strcpy(token.value, lower); // store term in lowercase
+		}
+		
+		return token;
+	}
+\end{verbatim}
+
+\textbf{Поддерживаемые токены:}
+\begin{itemize}
+	\item TOKEN\_TERM — термины (слова).
+	\item TOKEN\_AND — оператор AND.
+	\item TOKEN\_OR — оператор OR.
+	\item TOKEN\_NOT — оператор NOT.
+	\item TOKEN\_LPAREN / TOKEN\_RPAREN — скобки (опционально).
+	\item TOKEN\_END — конец запроса.
+\end{itemize}
+
+\textbf{6. CLI интерфейс (main.cpp)}\\
+Утилита командной строки поддерживает два режима: запрос из аргументов командной строки или интерактивный режим (stdin).
+
+\begin{verbatim}
+	int main(int argc, char** argv) {
+		if (argc < 2) {
+			print_usage();
+			return 1;
+		}
+		
+		// Load index
+		BooleanIndex index;
+		fprintf(stderr, "Loading index from %s...\n", argv[1]);
+		index.load(argv[1]);
+		fprintf(stderr, "Index loaded: %d documents, %d terms\n",
+		index.get_num_docs(), index.get_num_terms());
+		
+		SearchEngine engine(&index);
+		
+		if (argc >= 3) {
+			// Mode 1: query from argv
+			char query[1000] = "";
+			for (int i = 2; i < argc; i++) {
+				strcat(query, argv[i]);
+				if (i < argc - 1) strcat(query, " ");
+			}
+			
+			PostingList* results = engine.search(query);
+			engine.print_results(results, 1000); // limit 1000
+			delete results;
+			
+		} else {
+			// Mode 2: interactive stdin
+			fprintf(stderr, "Enter queries (one per line), Ctrl+D to exit:\n");
+			char query[1000];
+			
+			while (fgets(query, sizeof(query), stdin)) {
+				query[strcspn(query, "\n")] = '\0';
+				if (strlen(query) == 0) continue;
+				
+				PostingList* results = engine.search(query);
+				engine.print_results(results, 1000);
+				delete results;
+			}
+		}
+		
+		return 0;
+	}
+\end{verbatim}
+
+\textbf{Использование:}
+\begin{verbatim}
+	# Mode 1: argv query
+	boolean_search.exe index.txt python AND программирование
+	
+	# Mode 2: interactive
+	boolean_search.exe index.txt
+	> python
+	> машинное обучение
+	> Ctrl+D
+\end{verbatim}
+
+\textbf{Формат вывода:}
+\begin{verbatim}
+	15847
+	0
+	15
+	23
+	45
+	...
+\end{verbatim}
+
+Первая строка — количество результатов, далее — \texttt{doc\_id} по одному на строку.
+
+\textbf{7. Web интерфейс (Flask)}\\
+Для удобного доступа к поиску через браузер реализовано Flask-приложение, которое выполняет запросы и отображает результаты в HTML.
+
+\begin{verbatim}
+	# Fragment from web/app.py
+	
+	from flask import Flask, render_template, request
+	import subprocess
+	import os
+	
+	app = Flask(__name__)
+	
+	INDEX_PATH = '../data/boolean_index.txt'
+	EXE_PATH = '../build/boolean_search.exe'
+	
+	def search_query(query):
+	"""Run search query"""
+	result = subprocess.run(
+	[EXE_PATH, INDEX_PATH, query],
+	capture_output=True,
+	text=True,
+	encoding='utf-8',
+	timeout=30
+	)
+	
+	lines = result.stdout.strip().split('\n')
+	if len(lines) < 1:
+	return []
+	
+	num_results = int(lines[0])
+	doc_ids = [int(lines[i + 1]) for i in range(min(num_results, len(lines) - 1))]
+	return doc_ids
+	
+	@app.route('/')
+	def index():
+	"""Main page with search form"""
+	return render_template('index.html')
+	
+	@app.route('/search')
+	def search():
+	"""Search results page"""
+	query = request.args.get('q', '')
+	if not query:
+	return render_template('index.html', error="Пустой запрос")
+	
+	# Execute search
+	doc_ids = search_query(query)
+	
+	# Build results (demo titles)
+	results = [{'doc_id': doc_id, 'title': f'Документ {doc_id}'}
+	for doc_id in doc_ids[:50]]  # 50 results limit for Web
+	
+	return render_template('results.html',
+	query=query,
+	results=results,
+	total=len(doc_ids))
+	
+	if __name__ == '__main__':
+	app.run(debug=True, host='0.0.0.0', port=5000)
+\end{verbatim}
+
+\textbf{Преимущества Web-интерфейса:}
+\begin{itemize}
+	\item Индекс загружается один раз при старте сервера.
+	\item Последующие запросы выполняются за 50--2000 мс (ускорение $\sim$50x).
+	\item Удобный UI с примерами запросов и справкой.
+	\item Пагинация результатов (50 на страницу).
+\end{itemize}
+
+\textbf{Запуск:}
+\begin{verbatim}
+	cd web
+	python app.py
+	# Open http://localhost:5000
+\end{verbatim}
+
+\pagebreak

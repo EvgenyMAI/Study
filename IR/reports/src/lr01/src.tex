@@ -1,0 +1,173 @@
+\setcounter{section}{0}
+\setcounter{subsection}{0}
+
+\section{Описание}
+
+\textbf{Цель работы:} Подготовить и проанализировать корпус текстовых документов для дальнейшего использования в задачах информационного поиска (индексация, ранжирование, кластеризация).
+
+\subsection{Источники данных и сбор корпуса}
+
+Для формирования корпуса были использованы два независимых источника, обеспечивающих разнообразие лексики и структуры текстов:
+\begin{enumerate}
+	\item \textbf{Habr.com} (технические статьи).
+	\begin{itemize}
+		\item \textbf{Тематика:} программирование, машинное обучение, DevOps, кибербезопасность.
+		\item \textbf{Метод сбора:} парсинг через разделы статей, тематические хабы и списки топовых публикаций.
+	\end{itemize}
+	
+	\item \textbf{Lenta.ru} (новостной портал).
+	\begin{itemize}
+		\item \textbf{Тематика:} политика, экономика, технологии, общество.
+		\item \textbf{Метод сбора:} парсинг RSS-лент и архива новостей за период 2021--2025 гг.
+	\end{itemize}
+\end{enumerate}
+
+\textbf{Итоговый объём:} собрано 39\,048 документов.
+
+Ссылка на архив с корпусом: \url{https://drive.google.com/file/d/1ELYTGEdc0JcjnWlG71hd5vZaRbUp2zTB/view?usp=drive_link}
+
+\subsection{Характеристика корпуса и предобработка}
+
+В ходе работы производилось скачивание полных HTML-версий страниц с последующим извлечением чистого текста.
+\begin{itemize}
+	\item \textbf{Структура сырых данных:} полные HTML-страницы, включающие разметку, стили, скрипты и навигационные элементы.
+	\item \textbf{Извлечённый текст:} очищен от HTML-тегов, скриптов и стилей; сохранена структура параграфов. Для каждого документа сформирован текстовый файл следующего формата:
+	\begin{itemize}
+		\item Мета-блок: заголовок, автор (для Habr), дата публикации, URL-источник.
+		\item Тело документа: основной текст статьи.
+	\end{itemize}
+	\item \textbf{Мета-информация:} для каждого документа сформирован JSON-объект, содержащий уникальный ID, дату в формате ISO 8601, ссылку на источник и размер файлов (сырого и чистого).
+\end{itemize}
+
+\subsection{Статистическая информация о корпусе}
+
+Проведён анализ собранных данных, результаты представлены в таблице ниже.
+
+\begin{longtable}{|p{11cm}|p{4cm}|}
+	\hline
+	\textbf{Метрика} & \textbf{Значение} \\
+	\hline
+	Всего документов & 39\,048 \\
+	\hline
+	Размер \enquote{сырых} данных (HTML) & 5\,324.64 МБ \\
+	\hline
+	Размер выделенного текста & 335.01 МБ \\
+	\hline
+	Средний размер документа (HTML) & 139.63 КБ \\
+	\hline
+	Средний объём текста в документе & 8.79 КБ \\
+	\hline
+\end{longtable}
+
+\textbf{Сравнение источников.}
+Статьи с Habr.com в среднем в 5.6 раз длиннее новостей Lenta.ru (14.66 КБ против 2.63 КБ текста), что создаёт необходимую для тестирования вариативность длины документов.
+
+\subsection{Анализ существующих поисковых систем}
+
+Был проведён анализ возможностей поиска по выбранным источникам с целью выявления недостатков.
+
+\begin{enumerate}
+	\item \textbf{Встроенный поиск Habr.com}
+	\begin{itemize}
+		\item \textit{Пример запроса:} \enquote{машинное обучение Python}
+		\item \textit{Недостатки:} в выдачу попадает много нерелевантных статей, где термины упоминаются вскользь; старые статьи (2015--2017 гг.) часто ранжируются выше актуальных; отсутствует семантический поиск (синонимы не учитываются).
+	\end{itemize}
+	
+	\item \textbf{Встроенный поиск Lenta.ru}
+	\begin{itemize}
+		\item \textit{Пример запроса:} \enquote{выборы президента США}
+		\item \textit{Недостатки:} отсутствует группировка похожих новостей (дубликаты в выдаче); слабая фильтрация по временным периодам; контекст запроса часто игнорируется (смешиваются новости разных лет).
+	\end{itemize}
+	
+	\item \textbf{Внешние поисковики (Google/Yandex с оператором site:)}
+	\begin{itemize}
+		\item \textit{Недостатки:} индексация новых статей отстаёт на несколько дней; в выдачу попадают служебные страницы; невозможно использовать внутренние метаданные сайта (рейтинг, хабы) для ранжирования.
+	\end{itemize}
+\end{enumerate}
+
+\pagebreak
+
+\section{Исходный код}
+
+Весь исходный код проекта организован в виде модульной структуры и доступен в репозитории. Реализация выполнена на языке Python с использованием библиотек \texttt{requests} (для HTTP-запросов) и \texttt{BeautifulSoup} (для парсинга HTML). Для ускорения процесса сбора данных применена многопоточность (\texttt{concurrent.futures}).
+
+\subsection{Структура проекта}
+
+\begin{itemize}
+	\item \texttt{parsers/} — модуль, содержащий логику скачивания и обработки страниц.
+	\begin{itemize}
+		\item \texttt{habr\_parser.py} — класс для работы с Habr.com.
+		\item \texttt{lenta\_parser.py} — класс для работы с Lenta.ru (RSS + архив).
+	\end{itemize}
+	\item \texttt{corpus/} — директория для хранения данных (разделена на \texttt{raw} для HTML и \texttt{text} для очищенных данных).
+	\item \texttt{stats/} — скрипты для подсчёта статистики по собранному корпусу.
+	\item \texttt{run\_all.bat} — сценарий автоматизации полного цикла работы.
+\end{itemize}
+
+\subsection{Основные алгоритмы}
+
+\textbf{Сбор ссылок (Crawling)}\\
+Для обеспечения репрезентативности выборки реализованы различные стратегии обхода.\\
+Для \textbf{Habr.com} используется комбинированный подход: обход страниц \enquote{Все статьи}, сбор \enquote{ТОП} и проход по популярным хабам.\\
+Для \textbf{Lenta.ru} используется обход архива по датам за период 2021--2025.
+
+\textit{Фрагмент из lenta\_parser.py (генерация ссылок через архив дат)}
+
+\begin{lstlisting}[language=Python]
+	while len(urls) < self.max_articles and days_back < max_days:
+	date = current_date - timedelta(days=days_back)
+	archive_url = f'https://lenta.ru/{date.strftime("%Y/%m/%d")}/'
+	# ... request archive and extract links ...
+\end{lstlisting}
+
+\textbf{Парсинг и очистка (Processing)}\\
+Ключевым методом в обоих парсерах является \texttt{parse\_article}: он загружает HTML, создаёт объект \texttt{BeautifulSoup} и извлекает основной контент, отсекая навигацию и рекламу.
+
+\textit{Фрагмент (извлечение метаданных и очистка)}
+
+\begin{lstlisting}[language=Python]
+	soup = BeautifulSoup(response.text, 'lxml')
+	
+	# Title and date
+	title = soup.find('h1').get_text(strip=True)
+	date = soup.find('time').get('datetime')
+	
+	# Main content block
+	article_body = soup.find('div', class_='topic-body__content')
+	if not article_body:
+	article_body = soup.find('div', itemprop='articleBody')
+	
+	# Plain text
+	text = article_body.get_text(separator='\n', strip=True)
+\end{lstlisting}
+
+\textbf{Многопоточная загрузка}\\
+Для ускорения I/O-операций используется \texttt{ThreadPoolExecutor}, что позволяет скачивать несколько страниц одновременно.
+
+\textit{Фрагмент из habr\_parser.py}
+
+\begin{lstlisting}[language=Python]
+	with ThreadPoolExecutor(max_workers=num_workers) as executor:
+	futures = {executor.submit(self.parse_article, url): url for url in new_urls}
+	for future in tqdm(as_completed(futures), total=len(new_urls)):
+	# ... handle results ...
+\end{lstlisting}
+
+\subsection{Формат хранения данных}
+
+Результат работы сохраняется в двух видах:
+\begin{enumerate}
+	\item \textbf{.html файлы} — полная копия страницы (для верификации).
+	\item \textbf{.txt файлы} — структурированный текст с заголовками метаданных:
+\end{enumerate}
+
+\begin{verbatim}
+	Title: Заголовок статьи
+	Author: Имя Автора
+	Date: 2024-01-15T10:00:00+03:00
+	URL: https://habr.com/ru/articles/123456/
+	
+	[Текст статьи...]
+\end{verbatim}
+
+\pagebreak

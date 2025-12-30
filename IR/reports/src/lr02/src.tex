@@ -1,0 +1,168 @@
+\setcounter{section}{0}
+\setcounter{subsection}{0}
+
+\section{Описание}
+
+\textbf{Цель работы:} Разработать автоматизированный поисковый робот (crawler) для сбора и обновления коллекции документов с сохранением данных в NoSQL базу данных. Робот должен поддерживать остановку/возобновление работы, переобход измененных страниц и масштабирование базы данных за счет импорта ранее собранных корпусов.
+
+\subsection{Архитектура решения}
+
+Робот реализован на языке Python. В качестве хранилища данных выбрана \textbf{MongoDB}, так как она подходит для хранения неструктурированных данных (JSON-подобных документов) и обеспечивает высокую скорость записи.
+
+\textbf{Основные компоненты системы:}
+\begin{enumerate}
+	\item \textbf{Менеджер конфигурации:} считывает параметры из файла \texttt{config.yaml} (параметры подключения к БД, задержки, стартовые точки, таймауты).
+	\item \textbf{Модуль загрузки (Downloader):} использует библиотеку \texttt{requests} с ротацией User-Agent для имитации поведения реального пользователя.
+	\item \textbf{Парсер и нормализатор:}
+	\begin{itemize}
+		\item Приводит URL к каноническому виду (нижний регистр, удаление якорей \texttt{\#}, параметров сессии и слешей в конце).
+		\item Вычисляет MD5-хеш контента для отслеживания изменений.
+	\end{itemize}
+	\item \textbf{Менеджер очереди:} реализует персистентную очередь. Состояние очереди периодически сбрасывается в БД, что позволяет продолжить обход после перезапуска с того же места.
+	\item \textbf{Storage Layer (MongoDB):}
+	\begin{itemize}
+		\item Коллекция \texttt{documents}: хранит сами данные (HTML, метаданные, хеши).
+		\item Коллекция \texttt{crawl\_queue}: хранит очередь ссылок для посещения.
+	\end{itemize}
+\end{enumerate}
+
+\subsection{Логика работы}
+
+\textbf{Алгоритм краулинга:}
+\begin{enumerate}
+	\item \textbf{Запуск:} робот проверяет наличие сохраненного состояния. Если оно есть --- загружает очередь URL, если нет --- берет seed-url из конфига.
+	\item \textbf{Обход:}
+	\begin{itemize}
+		\item Извлекает URL из очереди.
+		\item Скачивает HTML.
+		\item Считает хеш контента (\texttt{content\_hash}).
+		\item Проверяет в БД:
+		\begin{itemize}
+			\item Если документ существует и хеш совпадает --- обновляет поле \texttt{crawled\_at} (документ свежий).
+			\item Если хеш отличается --- обновляет тело документа и хеш.
+			\item Если документа нет --- создает новую запись.
+		\end{itemize}
+	\end{itemize}
+	\item \textbf{Остановка:} при получении сигнала остановки (Graceful Shutdown) или по достижении лимита текущее состояние очереди сохраняется в БД.
+\end{enumerate}
+
+\textbf{Миграция данных.}\\
+Для обеспечения требований к объему корпуса (30\,000+ документов) был разработан дополнительный модуль \texttt{migration.py}. Он импортирует статический корпус, собранный в ЛР \textnumero 1, в базу данных робота, приводя данные к единому формату (вычисление хешей, нормализация URL).
+
+\subsection{Результаты работы}
+
+Было проведено тестирование робота и последующее наполнение базы данных.
+
+\textbf{1. Тестовый запуск робота:}
+\begin{itemize}
+	\item Задержка (\texttt{delay}): 0.3 сек.
+	\item Объем тестовой выборки: 3000 документов.
+	\item Результат: робот успешно собрал новые данные и обновил существующие.
+\end{itemize}
+
+\textbf{2. Миграция корпуса.}\\
+В базу данных были успешно импортированы документы с ресурсов Habr.com и Lenta.ru.
+\begin{itemize}
+	\item \textbf{Всего документов в БД:} 41\,684
+	\item \textbf{Ошибок при миграции:} 1 (некорректный файл).
+\end{itemize}
+
+\textbf{Структура документа в MongoDB:}
+\begin{verbatim}
+	{
+		"_id": ObjectId("..."),
+		"url": "https://habr.com/ru/articles/978862",
+		"source": "habr",
+		"html": "<html>...</html>",
+		"crawled_at": 1734778509,
+		"content_hash": "5d41402abc4b2a76b9719d911017c592",
+		"size": 145678
+	}
+\end{verbatim}
+
+\pagebreak
+
+\section{Исходный код}
+
+Ниже приведены ключевые фрагменты реализации. Полный код, включая скрипт миграции и автотесты, находится в репозитории.
+
+\subsection{Конфигурация (config.yaml)}
+
+\begin{verbatim}
+	db:
+	host: localhost
+	port: 27017
+	database: search_engine
+	collection: documents
+	
+	logic:
+	delay_between_requests: 0.3
+	max_documents_per_run: 3000
+	recrawl_period_days: 30
+	
+	sources:
+	- name: habr
+	base_url: https://habr.com
+	start_urls:
+	- https://habr.com/ru/articles/
+\end{verbatim}
+
+\subsection{Основной класс робота (crawler.py)}
+
+\begin{lstlisting}[language=Python]
+	class SearchCrawler:
+	
+	def crawl(self):
+	"""Main crawling loop"""
+	self.load_queue_from_db()
+	
+	while self.queue and processed < max_docs:
+	item = self.queue.pop(0)
+	url = item['url']
+	
+	# Check if recrawl is needed
+	existing = self.collection.find_one({'url': url})
+	if existing and not self._should_recrawl(existing):
+	continue
+	
+	html = self.fetch_page(url)
+	if html:
+	self.save_document(url, html, item['source'])
+	
+	# Extract links and extend queue
+	links = self.extract_links(url, html, item['source'])
+	for link in links:
+	self.add_to_queue(link, item['source'])
+	
+	def save_document(self, url: str, html: str, source: str) -> bool:
+	"""Save with content hash check (content deduplication)"""
+	content_hash = self._calculate_content_hash(html)
+	
+	# Upsert logic (insert or update)
+	# ...
+\end{lstlisting}
+
+\subsection{Скрипт миграции (migration.py)}
+
+\begin{lstlisting}[language=Python]
+	def migrate():
+	"""Import data from file-based corpus into MongoDB"""
+	
+	# ... connect to DB ...
+	
+	for item in metadata:
+	# Read HTML file from raw folder
+	with open(html_path, 'r') as hf:
+	html_content = hf.read()
+	
+	# Convert to crawler format
+	url = normalize_url(item['url'])
+	content_hash = calculate_hash(html_content)
+	
+	# Bulk insert for speed
+	operations.append(
+	UpdateOne({'url': url}, {'$set': doc}, upsert=True)
+	)
+\end{lstlisting}
+
+\pagebreak
